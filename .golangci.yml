@@ -15,6 +15,25 @@ linters-settings:
     suggest-new: true
   unparam:
     check-exported: false
+  mnd:
+    checks:
+      - argument
+      - case
+      - condition
+      - return
+    ignored-numbers:
+      - '1'
+      - '2'
+      - '3'
+      - '5'
+      - '10'
+      - '60'
+      - '64'
+      - '100'
+      - '600'
+      - '0755'
+      - '0644'
+      - '0666'
 
 linters:
   # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
@@ -56,11 +75,6 @@ linters:
     - unparam
     - unused
     - whitespace
-  gomnd:
-    settings:
-      checks: argument,case,condition,return
-      ignored-numbers: 1,2,3,5,10,60,64,100,600,0755,0644,0666
-
 
 issues:
   exclude-rules:
