@@ -1,3 +1,3 @@
 module go-persistent-ds
 
-go 1.22
+go 1.23
