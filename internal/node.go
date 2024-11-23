@@ -45,7 +45,7 @@ func newNode(data interface{}, parentNode *Node, vm *VersionMachine) *Node {
 		data:           data,
 		children:       make([]*Node, 0),
 		parent:         parentNode,
-		version:        vm.getAndIncrementVersion(),
+		version:        vm.GetAndIncrementVersion(),
 		versionMachine: vm,
 	}
 }
