@@ -1,52 +1,50 @@
 package internal
 
 type FatNode struct {
-	root *Node
+	root    *Node
+	history []int
 }
 
 type Node struct {
-	data           interface{}
-	children       []*Node
-	parent         *Node
-	version        int
-	versionMachine *VersionMachine
+	data     interface{}
+	children []*Node
+	parent   *Node
+	version  int
 }
 
-func NewFatNode(rootData interface{}) *FatNode {
+func NewFatNode(rootData interface{}, version int) *FatNode {
 	return &FatNode{
 		root: newNode(
 			rootData,
 			nil,
-			&VersionMachine{
-				version: 0,
-			},
+			version,
 		),
+		history: []int{version},
 	}
 }
 
-func (n *Node) AddChild(data interface{}) *Node {
-	newNode := newNode(data, n, n.versionMachine)
-	n.children = append(n.children, newNode)
-	return newNode
+func (fn *FatNode) GetLast() {
+	// TODO
 }
 
-func (n *Node) UpdateNode(newData interface{}) *Node {
-	newNode := newNode(newData, n, n.versionMachine)
-	n.children = append(n.children, newNode)
-	return newNode
+func (fn *FatNode) Update(data interface{}, prevVersion int, newVersion int) {
+	node := fn.FindNodeByVersion(prevVersion)
+	if node == nil {
+		panic("Node not found!")
+	}
+	node.updateNode(data, newVersion)
 }
 
 func (fn *FatNode) FindNodeByVersion(version int) *Node {
 	return findNodeByVersion(fn.root, version)
 }
 
-func newNode(data interface{}, parentNode *Node, vm *VersionMachine) *Node {
+func newNode(data interface{}, parentNode *Node, nodeVersion int) *Node {
 	return &Node{
-		data:           data,
-		children:       make([]*Node, 0),
-		parent:         parentNode,
-		version:        vm.GetAndIncrementVersion(),
-		versionMachine: vm,
+		data:     data,
+		children: make([]*Node, 0),
+		parent:   parentNode,
+		version:  nodeVersion,
 	}
 }
 
@@ -61,4 +59,16 @@ func findNodeByVersion(node *Node, version int) *Node {
 		}
 	}
 	return nil
+}
+
+func (n *Node) addChild(data interface{}, version int, parent *Node) *Node {
+	newNode := newNode(data, parent, version)
+	n.children = append(n.children, newNode)
+	return newNode
+}
+
+func (n *Node) updateNode(newData interface{}, version int) *Node {
+	newNode := newNode(newData, n, version)
+	n.children = append(n.children, newNode)
+	return newNode
 }

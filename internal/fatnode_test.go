@@ -7,12 +7,12 @@ import (
 
 func TestFatNodeVersion(t *testing.T) {
 
-	fn := NewFatNode("root")
+	fn := NewFatNode("root", 0)
 	if fn.root.version != 0 {
 		t.Error("Node version is incorrect. Expected 0, but was:" + strconv.Itoa(fn.root.version))
 	}
 
-	fn.root.UpdateNode("root1")
+	fn
 	if fn.root.version != 0 {
 		t.Error("Node version is incorrect. Expected 0, but was:" + strconv.Itoa(fn.root.version))
 	}
