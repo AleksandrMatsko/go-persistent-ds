@@ -1,45 +1,25 @@
 package internal
 
 import (
-	"strconv"
 	"testing"
 )
 
-func TestFatNodeVersion(t *testing.T) {
-
-	fn := NewFatNode("root", 0)
-	if fn.root.version != 0 {
-		t.Error("Node version is incorrect. Expected 0, but was:" + strconv.Itoa(fn.root.version))
+func TestFatNodeSearch(t *testing.T) {
+	fatNode := FatNode{
+		nodes: []*Node{
+			{data: "Node 1", version: 1},
+			{data: "Node 2", version: 2},
+			{data: "Node 3", version: 3},
+			{data: "Node 4", version: 4},
+			{data: "Node 5", version: 5},
+			{data: "Node 6", version: 6},
+		},
 	}
 
-	fn
-	if fn.root.version != 0 {
-		t.Error("Node version is incorrect. Expected 0, but was:" + strconv.Itoa(fn.root.version))
-	}
-	if len(fn.root.children) != 1 {
-		t.Error("No children after updating node!")
-	}
-	if fn.root.children[0].version != 1 {
-		t.Error("Child node version is incorrect. Expected 1, but was:" + strconv.Itoa(fn.root.version))
-	}
-}
-
-func TestFatNodeSearchByVersion(t *testing.T) {
-
-	fn := NewFatNode("root")
-	fn.root.UpdateNode("ch1")
-	fn.root.UpdateNode("ch2")
-	if len(fn.root.children) != 2 {
-		t.Error("Expected 2 children after 2 root node updates!")
-	}
-
-	child := fn.FindNodeByVersion(1)
-	if child.data != "ch1" {
-		t.Error("Wrong child was found! Expected child with data = ch1 but got with data = " + child.data.(string))
-	}
-
-	child = fn.FindNodeByVersion(2)
-	if child.data != "ch2" {
-		t.Error("Wrong child was found! Expected child with data = ch2 but got with data = " + child.data.(string))
+	node := fatNode.FindByVersion(3)
+	if node == nil {
+		t.Fatal("node was not found!")
+	} else if node.version != 3 {
+		t.Fatal("wrong node version!")
 	}
 }

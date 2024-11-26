@@ -1,74 +1,53 @@
 package internal
 
 type FatNode struct {
-	root    *Node
-	history []int
+	nodes []*Node
 }
 
 type Node struct {
-	data     interface{}
-	children []*Node
-	parent   *Node
-	version  int
+	data    interface{}
+	version int
 }
 
-func NewFatNode(rootData interface{}, version int) *FatNode {
+// NewFatNode создаёт новый "толстый узел".
+func NewFatNode(data interface{}, version int) *FatNode {
 	return &FatNode{
-		root: newNode(
-			rootData,
-			nil,
-			version,
-		),
-		history: []int{version},
+		nodes: []*Node{newNode(data, version)},
 	}
 }
 
-func (fn *FatNode) GetLast() {
-	// TODO
+// GetLast возвращает последнюю версию объекта внутри "толстого узла".
+func (fn *FatNode) GetLast() *Node {
+	return fn.nodes[len(fn.nodes)-1]
 }
 
-func (fn *FatNode) Update(data interface{}, prevVersion int, newVersion int) {
-	node := fn.FindNodeByVersion(prevVersion)
-	if node == nil {
-		panic("Node not found!")
-	}
-	node.updateNode(data, newVersion)
+// Update добавляет новую версию объекта внутри "толстого узла".
+func (fn *FatNode) Update(data interface{}, newVersion int) {
+	fn.nodes = append(fn.nodes, newNode(data, newVersion))
 }
 
-func (fn *FatNode) FindNodeByVersion(version int) *Node {
-	return findNodeByVersion(fn.root, version)
-}
+// FindByVersion находит нужную версию объекта внутри "толстого узла" бинарным поиском.
+func (fn *FatNode) FindByVersion(version int) *Node {
+	left, right := 0, len(fn.nodes)-1
 
-func newNode(data interface{}, parentNode *Node, nodeVersion int) *Node {
-	return &Node{
-		data:     data,
-		children: make([]*Node, 0),
-		parent:   parentNode,
-		version:  nodeVersion,
-	}
-}
+	for left <= right {
+		mid := left + (right-left)/2
 
-func findNodeByVersion(node *Node, version int) *Node {
-	if node.version == version {
-		return node
-	}
-	for _, child := range node.children {
-		result := findNodeByVersion(child, version)
-		if result != nil {
-			return result
+		if fn.nodes[mid].version == version {
+			return fn.nodes[mid]
+		} else if fn.nodes[mid].version < version {
+			left = mid + 1
+		} else {
+			right = mid - 1
 		}
 	}
+
 	return nil
 }
 
-func (n *Node) addChild(data interface{}, version int, parent *Node) *Node {
-	newNode := newNode(data, parent, version)
-	n.children = append(n.children, newNode)
-	return newNode
-}
-
-func (n *Node) updateNode(newData interface{}, version int) *Node {
-	newNode := newNode(newData, n, version)
-	n.children = append(n.children, newNode)
-	return newNode
+func newNode(data interface{}, nodeVersion int) *Node {
+	return &Node{
+		data:    data,
+		version: nodeVersion,
+	}
 }
