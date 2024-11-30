@@ -1,15 +1,15 @@
 package internal
 
 type VersionMachine struct {
-	version int
+	version uint64
 }
 
-func (vm *VersionMachine) GetAndIncrementVersion() int {
+func (vm *VersionMachine) GetAndIncrementVersion() uint64 {
 	curVersion := vm.version
 	vm.version = vm.version + 1
 	return curVersion
 }
 
-func (vm *VersionMachine) GetVersion() int {
+func (vm *VersionMachine) GetVersion() uint64 {
 	return vm.version
 }

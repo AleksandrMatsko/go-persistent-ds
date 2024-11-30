@@ -7,11 +7,11 @@ type FatNode struct {
 
 type node struct {
 	data    interface{}
-	version int
+	version uint64
 }
 
 // NewFatNode creates new FatNode.
-func NewFatNode(data interface{}, version int) *FatNode {
+func NewFatNode(data interface{}, version uint64) *FatNode {
 	return &FatNode{
 		nodes: []*node{newNode(data, version)},
 	}
@@ -23,20 +23,20 @@ func (fn *FatNode) GetLast() interface{} {
 }
 
 // Update adds new object version into FatNode.
-func (fn *FatNode) Update(data interface{}, newVersion int) {
+func (fn *FatNode) Update(data interface{}, newVersion uint64) {
 	fn.nodes = append(fn.nodes, newNode(data, newVersion))
 }
 
 // FindByVersion finds needed version of object inside FatNode using binary search.
-// If the version is not found, then the pair (nil, -1) is returned.
-func (fn *FatNode) FindByVersion(version int) (interface{}, int) {
+// If the version is not found, then the pair (nil, -1, false) is returned.
+func (fn *FatNode) FindByVersion(version uint64) (interface{}, uint64, bool) {
 	left, right := 0, len(fn.nodes)-1
 
 	for left <= right {
 		mid := left + (right-left)/2
 
 		if fn.nodes[mid].version == version {
-			return fn.nodes[mid].data, fn.nodes[mid].version
+			return fn.nodes[mid].data, fn.nodes[mid].version, true
 		} else if fn.nodes[mid].version < version {
 			left = mid + 1
 		} else {
@@ -44,11 +44,11 @@ func (fn *FatNode) FindByVersion(version int) (interface{}, int) {
 		}
 	}
 
-	return nil, -1
+	return nil, 0, false
 }
 
 // newNode creates new node inside FatNode.
-func newNode(data interface{}, nodeVersion int) *node {
+func newNode(data interface{}, nodeVersion uint64) *node {
 	return &node{
 		data:    data,
 		version: nodeVersion,

@@ -16,13 +16,13 @@ func TestFatNodeSearch(t *testing.T) {
 		},
 	}
 
-	data, version := fatNode.FindByVersion(3)
-	if data != nil && version != -1 {
-		t.Fatal("Expected -1, got: ", version)
+	data, version, success := fatNode.FindByVersion(3)
+	if data != nil && version != 0 && success != false {
+		t.Fatalf("Expected nil, -1, false, but got: %s, %d, %v", data, version, success)
 	}
 
-	data, version = fatNode.FindByVersion(9)
-	if data != "Node 4" && version != 9 {
+	data, version, success = fatNode.FindByVersion(9)
+	if data != "Node 4" && version != 9 && success != true {
 		t.Fatal("Expected 9, got: ", version)
 	}
 }
