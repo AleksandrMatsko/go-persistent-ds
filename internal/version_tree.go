@@ -2,6 +2,7 @@ package internal
 
 import "log"
 
+// VersionTree is a struct to store object change history
 type VersionTree struct {
 	tree []*versionTreeNode
 }
@@ -12,20 +13,14 @@ type versionTreeNode struct {
 	children []*versionTreeNode
 }
 
+// NewVersionTree creates new object change history tree
 func NewVersionTree(rootVersion uint64) *VersionTree {
 	return &VersionTree{
 		tree: []*versionTreeNode{newVersionTreeNode(rootVersion, nil)},
 	}
 }
 
-func newVersionTreeNode(v uint64, parent *versionTreeNode) *versionTreeNode {
-	return &versionTreeNode{
-		version:  v,
-		parent:   parent,
-		children: []*versionTreeNode{},
-	}
-}
-
+// Update creates new version for specified version
 func (vt *VersionTree) Update(prevVersion uint64, newVersion uint64) bool {
 	node, success := vt.findVersion(prevVersion)
 	if !success {
@@ -35,6 +30,32 @@ func (vt *VersionTree) Update(prevVersion uint64, newVersion uint64) bool {
 
 	node.children = append(node.children, newVersionTreeNode(newVersion, node))
 	return true
+}
+
+// GetHistory returns change history for specified object's version
+func (vt *VersionTree) GetHistory(version uint64) []uint64 {
+	node, success := vt.findVersion(version)
+	if !success {
+		log.Fatal("version not found")
+		return nil
+	}
+
+	var history []uint64
+	for node != nil {
+		history = append(history, node.version)
+		node = node.parent
+	}
+	reverse(history)
+
+	return history
+}
+
+func newVersionTreeNode(v uint64, parent *versionTreeNode) *versionTreeNode {
+	return &versionTreeNode{
+		version:  v,
+		parent:   parent,
+		children: []*versionTreeNode{},
+	}
 }
 
 func (vt *VersionTree) findVersion(version uint64) (*versionTreeNode, bool) {
@@ -53,4 +74,10 @@ func (vt *VersionTree) findVersion(version uint64) (*versionTreeNode, bool) {
 	}
 
 	return nil, false
+}
+
+func reverse(s []uint64) {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
 }
