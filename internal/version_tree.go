@@ -2,7 +2,7 @@ package internal
 
 import "log"
 
-// VersionTree is a struct to store object change history
+// VersionTree is a struct to store object change history.
 type VersionTree struct {
 	tree []*versionTreeNode
 }
@@ -13,26 +13,41 @@ type versionTreeNode struct {
 	children []*versionTreeNode
 }
 
-// NewVersionTree creates new object change history tree
+// NewVersionTree creates new object change history tree.
 func NewVersionTree(rootVersion uint64) *VersionTree {
+	if rootVersion != 1 {
+		return nil
+	}
+
 	return &VersionTree{
 		tree: []*versionTreeNode{newVersionTreeNode(rootVersion, nil)},
 	}
 }
 
-// Update creates new version for specified version
+// Update creates new version for specified version.
 func (vt *VersionTree) Update(prevVersion uint64, newVersion uint64) bool {
+	if prevVersion >= newVersion {
+		return false
+	}
+	len1 := uint64(len(vt.tree)) + 1
+	if newVersion != len1 {
+		return false
+	}
+
 	node, success := vt.findVersion(prevVersion)
 	if !success {
 		log.Fatal("version not found")
 		return false
 	}
 
-	node.children = append(node.children, newVersionTreeNode(newVersion, node))
+	newNode := newVersionTreeNode(newVersion, node)
+	node.children = append(node.children, newNode)
+	vt.tree = append(vt.tree, newNode)
+
 	return true
 }
 
-// GetHistory returns change history for specified object's version
+// GetHistory returns change history for specified object's version.
 func (vt *VersionTree) GetHistory(version uint64) []uint64 {
 	node, success := vt.findVersion(version)
 	if !success {
