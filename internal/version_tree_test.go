@@ -3,7 +3,7 @@ package internal
 import "testing"
 
 func TestNewVersionTreeCreation(t *testing.T) {
-	vt := NewVersionTree()
+	vt := NewVersionTree[int]()
 
 	if len(vt.tree) != 1 {
 		t.Errorf("Expected tree length 1, got %d", len(vt.tree))
@@ -14,7 +14,7 @@ func TestNewVersionTreeCreation(t *testing.T) {
 }
 
 func TestVersionTreeUpdate(t *testing.T) {
-	vt := NewVersionTree()
+	vt := NewVersionTree[int]()
 
 	vt.Update(0)
 	vt.Update(1)

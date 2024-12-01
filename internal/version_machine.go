@@ -8,6 +8,11 @@ type VersionMachine struct {
 // GetAndIncrementVersion returns new version.
 func (vm *VersionMachine) GetAndIncrementVersion() uint64 {
 	curVersion := vm.version
+
+	if vm.version == ^uint64(0) {
+		panic("version overflow")
+	}
+
 	vm.version = vm.version + 1
 	return curVersion
 }

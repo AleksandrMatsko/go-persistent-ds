@@ -3,31 +3,32 @@ package internal
 import "slices"
 
 // VersionTree is a struct to store object change history.
-type VersionTree struct {
-	tree           []*versionTreeNode
+type VersionTree[T any] struct {
+	tree           []*versionTreeNode[T]
 	versionMachine *VersionMachine
 }
 
-type versionTreeNode struct {
-	version  uint64
-	parent   *versionTreeNode
-	children []*versionTreeNode
+type versionTreeNode[T any] struct {
+	version     uint64
+	versionInfo T
+	parent      *versionTreeNode[T]
+	children    []*versionTreeNode[T]
 }
 
 // NewVersionTree creates new object change history tree.
-func NewVersionTree() *VersionTree {
+func NewVersionTree[T any]() *VersionTree[T] {
 	vm := &VersionMachine{
 		version: 0,
 	}
 
-	return &VersionTree{
-		tree:           []*versionTreeNode{newVersionTreeNode(vm.GetAndIncrementVersion(), nil)},
+	return &VersionTree[T]{
+		tree:           []*versionTreeNode[T]{newVersionTreeNode[T](vm.GetAndIncrementVersion(), nil)},
 		versionMachine: vm,
 	}
 }
 
 // Update creates new version for specified version.
-func (vt *VersionTree) Update(prevVersion uint64) uint64 {
+func (vt *VersionTree[T]) Update(prevVersion uint64) uint64 {
 	node := vt.findVersion(prevVersion)
 	newNode := newVersionTreeNode(vt.versionMachine.GetAndIncrementVersion(), node)
 	node.children = append(node.children, newNode)
@@ -37,7 +38,7 @@ func (vt *VersionTree) Update(prevVersion uint64) uint64 {
 }
 
 // GetHistory returns change history for specified object's version.
-func (vt *VersionTree) GetHistory(version uint64) []uint64 {
+func (vt *VersionTree[T]) GetHistory(version uint64) []uint64 {
 	node := vt.findVersion(version)
 
 	var history []uint64
@@ -50,14 +51,20 @@ func (vt *VersionTree) GetHistory(version uint64) []uint64 {
 	return history
 }
 
-func newVersionTreeNode(v uint64, parent *versionTreeNode) *versionTreeNode {
-	return &versionTreeNode{
+// GetVersionInfo returns info for specified version.
+func (vt *VersionTree[T]) GetVersionInfo(version uint64) T {
+	node := vt.findVersion(version)
+	return node.versionInfo
+}
+
+func newVersionTreeNode[T any](v uint64, parent *versionTreeNode[T]) *versionTreeNode[T] {
+	return &versionTreeNode[T]{
 		version:  v,
 		parent:   parent,
-		children: []*versionTreeNode{},
+		children: []*versionTreeNode[T]{},
 	}
 }
 
-func (vt *VersionTree) findVersion(version uint64) *versionTreeNode {
+func (vt *VersionTree[T]) findVersion(version uint64) *versionTreeNode[T] {
 	return vt.tree[version]
 }
