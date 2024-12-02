@@ -57,6 +57,10 @@ func (vt *VersionTree[T]) GetVersionInfo(version uint64) T {
 	return node.versionInfo
 }
 
+func (vt VersionTree[T]) SetVersionInfo(version uint64, info T) {
+	vt.findVersion(version).versionInfo = info
+}
+
 func newVersionTreeNode[T any](v uint64, parent *versionTreeNode[T]) *versionTreeNode[T] {
 	return &versionTreeNode[T]{
 		version:  v,
