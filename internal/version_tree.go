@@ -73,7 +73,7 @@ func (vt *VersionTree[T]) GetVersionInfo(version uint64) (*T, error) {
 	return &node.versionInfo, nil
 }
 
-func (vt VersionTree[T]) SetVersionInfo(version uint64, info T) error {
+func (vt *VersionTree[T]) SetVersionInfo(version uint64, info T) error {
 	node, success := vt.findVersion(version)
 	if !success {
 		return ErrVersionNotFound
