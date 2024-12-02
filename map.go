@@ -5,12 +5,15 @@ import (
 	"go-persistent-ds/internal"
 )
 
-var (
-	// ErrMapInitialize is returned then there is a problem in creating new tree.
-	ErrMapInitialize = errors.New("failed to init Map because version tree is damaged")
-)
+// ErrMapInitialize is returned then there is a problem in creating new tree.
+var ErrMapInitialize = errors.New("failed to init Map because version tree is damaged")
 
 // Map is a persistent implementation of go map.
+// While working with map you can access and/or modify each previous version.
+// Note that modifying new version creates new one.
+//
+// Map can perform total of 2^65-1 modifications, and will panic on attempt to modify it for 2^65 time.
+// If you need to continue editing Map, the good idea is to use ToGoMap method to dump Map for special version.
 type Map[TKey comparable, TVal any] struct {
 	versionTree *internal.VersionTree[mapVersionInfo]
 	nodes       map[TKey]*internal.FatNode
@@ -19,13 +22,6 @@ type Map[TKey comparable, TVal any] struct {
 type mapVersionInfo struct {
 	size int
 }
-
-type mapOperationKind string
-
-const (
-	mapSet    mapOperationKind = "MapSet"
-	mapDelete mapOperationKind = "MapDelete"
-)
 
 // NewMap creates empty Map.
 func NewMap[TKey comparable, TVal any]() *Map[TKey, TVal] {
@@ -59,9 +55,10 @@ func NewMapWithCapacity[TKey comparable, TVal any](capacity int) *Map[TKey, TVal
 // Get returns a pair of value and bool for provided version and key.
 // Bool tells if the value for such key and version exists.
 //
-// Complexity: O(log(m) * log(n)) there:
+// Complexity: O(log(m) * log(n) * k) there:
 //   - n - amount of different keys in map from creation;
 //   - m - amount of modifications for current key from map creation.
+//   - k - amount of modifications visible from current branch.
 func (m *Map[TKey, TVal]) Get(version uint64, key TKey) (TVal, bool) {
 	fatNode, exists := m.nodes[key]
 	if !exists {
@@ -140,7 +137,7 @@ func (m *Map[TKey, TVal]) Set(forVersion uint64, key TKey, val TVal) (uint64, er
 
 	_, ok := m.Get(forVersion, key)
 	if !ok {
-		// the key exists in other branch of versions but not in the current branch
+		// the key exists in other versions but not visible for the current version
 		newVersionInfo.size += 1
 	}
 
@@ -166,22 +163,22 @@ func (m *Map[TKey, TVal]) Len(forVersion uint64) (int, error) {
 // Delete the value from Map for given key for given version.
 //
 // Complexity: same as for Get.
-func (m *Map[TKey, TVal]) Delete(forVersion uint64, key TKey) (uint64, TVal, bool) {
+func (m *Map[TKey, TVal]) Delete(forVersion uint64, key TKey) (uint64, bool) {
 	existedFatNode, keyExists := m.nodes[key]
 	if !keyExists {
 		// no key to delete
-		return 0, *new(TVal), false
+		return 0, false
 	}
 
-	val, valExists := m.Get(forVersion, key)
+	_, valExists := m.Get(forVersion, key)
 	if !valExists {
 		// key exists but no value visible for this version
-		return 0, *new(TVal), false
+		return 0, false
 	}
 
 	newVersion, err := m.versionTree.Update(forVersion)
 	if err != nil {
-		return 0, *new(TVal), false
+		return 0, false
 	}
 
 	oldVersionInfo, _ := m.versionTree.GetVersionInfo(forVersion)
@@ -194,7 +191,7 @@ func (m *Map[TKey, TVal]) Delete(forVersion uint64, key TKey) (uint64, TVal, boo
 
 	_ = m.versionTree.SetVersionInfo(newVersion, newVersionInfo)
 
-	return newVersion, val, true
+	return newVersion, true
 }
 
 // ToGoMap converts persistent Map for specified version into go map.
