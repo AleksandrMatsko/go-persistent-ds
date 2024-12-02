@@ -6,31 +6,62 @@ func TestNewVersionTreeCreation(t *testing.T) {
 	vt := NewVersionTree[int]()
 
 	if len(vt.tree) != 1 {
-		t.Errorf("Expected tree length 1, got %d", len(vt.tree))
+		t.Errorf("Expected tree length 1, got: %d", len(vt.tree))
 	}
 	if vt.tree[0].version != 0 {
-		t.Errorf("Expected root version 1, got %d", vt.tree[0].version)
+		t.Errorf("Expected root version 1, got: %d", vt.tree[0].version)
 	}
 }
 
 func TestVersionTreeUpdate(t *testing.T) {
 	vt := NewVersionTree[int]()
 
-	vt.Update(0)
-	vt.Update(1)
-	vt.Update(2)
-	history := vt.GetHistory(3)
+	_, err := vt.Update(0)
+	if err != nil {
+		t.Errorf("Expected no error, got: %s", err)
+	}
+	_, err = vt.Update(1)
+	if err != nil {
+		t.Errorf("Expected no error, got: %s", err)
+	}
+	_, err = vt.Update(2)
+	if err != nil {
+		t.Errorf("Expected no error, got: %s", err)
+	}
+	history, err := vt.GetHistory(3)
+	if err != nil {
+		t.Errorf("Expected no error, got: %s", err)
+	}
 	expectedHistory := []uint64{0, 1, 2, 3}
 	if !equalSlices(history, expectedHistory) {
-		t.Errorf("Expected history %v, got %v", expectedHistory, history)
+		t.Errorf("Expected history: %v, got: %v", expectedHistory, history)
 	}
 
-	vt.Update(1)
-	vt.Update(4)
-	history = vt.GetHistory(5)
+	_, err = vt.Update(1)
+	if err != nil {
+		return
+	}
+	_, err = vt.Update(4)
+	if err != nil {
+		t.Errorf("Expected no error, got: %s", err)
+	}
+	history, err = vt.GetHistory(5)
+	if err != nil {
+		t.Errorf("Expected no error, got: %s", err)
+	}
 	expectedHistory = []uint64{0, 1, 4, 5}
 	if !equalSlices(history, expectedHistory) {
-		t.Errorf("Expected history %v, got %v", expectedHistory, history)
+		t.Errorf("Expected history: %v, got: %v", expectedHistory, history)
+	}
+}
+
+func TestVersionTree_UpdateError(t *testing.T) {
+	vt := NewVersionTree[int]()
+
+	_, err := vt.Update(2)
+
+	if err == nil {
+		t.Error("Expected error, but got none")
 	}
 }
 

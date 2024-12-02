@@ -1,6 +1,9 @@
 package internal
 
-import "slices"
+import (
+	"errors"
+	"slices"
+)
 
 // VersionTree is a struct to store object change history.
 type VersionTree[T any] struct {
@@ -15,6 +18,9 @@ type versionTreeNode[T any] struct {
 	children    []*versionTreeNode[T]
 }
 
+// ErrVersionNotFound will be returned if searched version was not found in VersionTree.
+var ErrVersionNotFound = errors.New("version not found")
+
 // NewVersionTree creates new object change history tree.
 func NewVersionTree[T any]() *VersionTree[T] {
 	vm := &VersionMachine{
@@ -28,18 +34,24 @@ func NewVersionTree[T any]() *VersionTree[T] {
 }
 
 // Update creates new version for specified version.
-func (vt *VersionTree[T]) Update(prevVersion uint64) uint64 {
-	node := vt.findVersion(prevVersion)
+func (vt *VersionTree[T]) Update(prevVersion uint64) (uint64, error) {
+	node, success := vt.findVersion(prevVersion)
+	if !success {
+		return 0, ErrVersionNotFound
+	}
 	newNode := newVersionTreeNode(vt.versionMachine.GetAndIncrementVersion(), node)
 	node.children = append(node.children, newNode)
 	vt.tree = append(vt.tree, newNode)
 
-	return vt.versionMachine.GetVersion()
+	return vt.versionMachine.GetVersion(), nil
 }
 
 // GetHistory returns change history for specified object's version.
-func (vt *VersionTree[T]) GetHistory(version uint64) []uint64 {
-	node := vt.findVersion(version)
+func (vt *VersionTree[T]) GetHistory(version uint64) ([]uint64, error) {
+	node, success := vt.findVersion(version)
+	if !success {
+		return nil, ErrVersionNotFound
+	}
 
 	var history []uint64
 	for node != nil {
@@ -48,17 +60,26 @@ func (vt *VersionTree[T]) GetHistory(version uint64) []uint64 {
 	}
 	slices.Reverse(history)
 
-	return history
+	return history, nil
 }
 
 // GetVersionInfo returns info for specified version.
-func (vt *VersionTree[T]) GetVersionInfo(version uint64) T {
-	node := vt.findVersion(version)
-	return node.versionInfo
+func (vt *VersionTree[T]) GetVersionInfo(version uint64) (*T, error) {
+	node, success := vt.findVersion(version)
+	if !success {
+		return nil, ErrVersionNotFound
+	}
+
+	return &node.versionInfo, nil
 }
 
-func (vt VersionTree[T]) SetVersionInfo(version uint64, info T) {
-	vt.findVersion(version).versionInfo = info
+func (vt VersionTree[T]) SetVersionInfo(version uint64, info T) error {
+	node, success := vt.findVersion(version)
+	if !success {
+		return ErrVersionNotFound
+	}
+	node.versionInfo = info
+	return nil
 }
 
 func newVersionTreeNode[T any](v uint64, parent *versionTreeNode[T]) *versionTreeNode[T] {
@@ -69,6 +90,9 @@ func newVersionTreeNode[T any](v uint64, parent *versionTreeNode[T]) *versionTre
 	}
 }
 
-func (vt *VersionTree[T]) findVersion(version uint64) *versionTreeNode[T] {
-	return vt.tree[version]
+func (vt *VersionTree[T]) findVersion(version uint64) (*versionTreeNode[T], bool) {
+	if version > uint64(len(vt.tree)) {
+		return nil, false
+	}
+	return vt.tree[version], true
 }
