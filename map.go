@@ -14,6 +14,8 @@ var ErrMapInitialize = errors.New("failed to init Map because version tree is da
 //
 // Map can perform total of 2^65-1 modifications, and will panic on attempt to modify it for 2^65 time.
 // If you need to continue editing Map, the good idea is to use ToGoMap method to dump Map for special version.
+//
+// Note that Map is not thread safe.
 type Map[TKey comparable, TVal any] struct {
 	versionTree *internal.VersionTree[mapVersionInfo]
 	nodes       map[TKey]*internal.FatNode
@@ -55,8 +57,7 @@ func NewMapWithCapacity[TKey comparable, TVal any](capacity int) *Map[TKey, TVal
 // Get returns a pair of value and bool for provided version and key.
 // Bool tells if the value for such key and version exists.
 //
-// Complexity: O(log(m) * log(n) * k) there:
-//   - n - amount of different keys in map from creation;
+// Complexity: O(log(m) * k) there:
 //   - m - amount of modifications for current key from map creation.
 //   - k - amount of modifications visible from current branch.
 func (m *Map[TKey, TVal]) Get(version uint64, key TKey) (TVal, bool) {
@@ -197,7 +198,7 @@ func (m *Map[TKey, TVal]) Delete(forVersion uint64, key TKey) (uint64, bool) {
 // ToGoMap converts persistent Map for specified version into go map.
 //
 // Complexity: O(Get) * n, there:
-//   - n - same as in Get.
+//   - n - amount of different keys in map from creation;
 func (m *Map[TKey, TVal]) ToGoMap(version uint64) (map[TKey]TVal, error) {
 	versionInfo, err := m.versionTree.GetVersionInfo(version)
 	if err != nil {
