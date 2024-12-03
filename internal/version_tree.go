@@ -91,7 +91,7 @@ func newVersionTreeNode[T any](v uint64, parent *versionTreeNode[T]) *versionTre
 }
 
 func (vt *VersionTree[T]) findVersion(version uint64) (*versionTreeNode[T], bool) {
-	if version > uint64(len(vt.tree)) {
+	if version >= uint64(len(vt.tree)) {
 		return nil, false
 	}
 	return vt.tree[version], true

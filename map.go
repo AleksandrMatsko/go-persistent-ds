@@ -26,12 +26,12 @@ type mapVersionInfo struct {
 }
 
 // NewMap creates empty Map.
-func NewMap[TKey comparable, TVal any]() *Map[TKey, TVal] {
+func NewMap[TKey comparable, TVal any]() (*Map[TKey, TVal], uint64) {
 	return NewMapWithCapacity[TKey, TVal](0)
 }
 
 // NewMapWithCapacity creates empty Map with given capacity.
-func NewMapWithCapacity[TKey comparable, TVal any](capacity int) *Map[TKey, TVal] {
+func NewMapWithCapacity[TKey comparable, TVal any](capacity int) (*Map[TKey, TVal], uint64) {
 	m := &Map[TKey, TVal]{
 		versionTree: internal.NewVersionTree[mapVersionInfo](),
 		nodes:       make(map[TKey]*internal.FatNode, capacity),
@@ -51,58 +51,7 @@ func NewMapWithCapacity[TKey comparable, TVal any](capacity int) *Map[TKey, TVal
 		panic(ErrMapInitialize)
 	}
 
-	return m
-}
-
-// Get returns a pair of value and bool for provided version and key.
-// Bool tells if the value for such key and version exists.
-//
-// Complexity: O(log(m) * k) there:
-//   - m - amount of modifications for current key from map creation.
-//   - k - amount of modifications visible from current branch.
-func (m *Map[TKey, TVal]) Get(version uint64, key TKey) (TVal, bool) {
-	fatNode, exists := m.nodes[key]
-	if !exists {
-		return *new(TVal), false
-	}
-
-	// on version = 0 Map is empty
-	if version == 0 {
-		return *new(TVal), false
-	}
-
-	val, _, found := fatNode.FindByVersion(version)
-	if found {
-		// found value exactly for the version
-		if val == nil {
-			return *new(TVal), false
-		}
-
-		return val.(TVal), true
-	}
-
-	changeHistory, err := m.versionTree.GetHistory(version)
-	if err != nil {
-		return *new(TVal), false
-	}
-
-	// zero version is always inside change history, and for the last version
-	if len(changeHistory) == 1 || len(changeHistory) == 2 {
-		return *new(TVal), false
-	}
-
-	for i := uint64(len(changeHistory) - 2); i >= 1; i-- {
-		val, _, found = fatNode.FindByVersion(version)
-		if found {
-			if val == nil {
-				return *new(TVal), false
-			}
-
-			return val.(TVal), true
-		}
-	}
-
-	return *new(TVal), false
+	return m, 0
 }
 
 // Set value for given key and version in Map.
@@ -147,6 +96,57 @@ func (m *Map[TKey, TVal]) Set(forVersion uint64, key TKey, val TVal) (uint64, er
 		newVersionInfo)
 
 	return newVersion, nil
+}
+
+// Get returns a pair of value and bool for provided version and key.
+// Bool tells if the value for such key and version exists.
+//
+// Complexity: O(log(m) * k) there:
+//   - m - amount of modifications for current key from map creation.
+//   - k - amount of modifications visible from current branch.
+func (m *Map[TKey, TVal]) Get(version uint64, key TKey) (TVal, bool) {
+	fatNode, exists := m.nodes[key]
+	if !exists {
+		return *new(TVal), false
+	}
+
+	// on version = 0 Map is empty
+	if version == 0 {
+		return *new(TVal), false
+	}
+
+	val, _, found := fatNode.FindByVersion(version)
+	if found {
+		// found value exactly for the version
+		if val == nil {
+			return *new(TVal), false
+		}
+
+		return val.(TVal), true
+	}
+
+	changeHistory, err := m.versionTree.GetHistory(version)
+	if err != nil {
+		return *new(TVal), false
+	}
+
+	// zero version is always inside change history, and for the last version
+	if len(changeHistory) == 1 || len(changeHistory) == 2 {
+		return *new(TVal), false
+	}
+
+	for i := uint64(len(changeHistory) - 2); i >= 1; i-- {
+		val, _, found = fatNode.FindByVersion(changeHistory[i])
+		if found {
+			if val == nil {
+				return *new(TVal), false
+			}
+
+			return val.(TVal), true
+		}
+	}
+
+	return *new(TVal), false
 }
 
 // Len returns the len of Map.
