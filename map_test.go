@@ -68,20 +68,20 @@ func TestMap_with_GetSet(t *testing.T) {
 		m, initialVersion := NewMap[string, string]()
 		versionShouldBe(t, initialVersion, 0)
 
-		gotVal, found := m.Get(initialVersion, key)
-		isTrue(t, !found)
+		gotVal, err := m.Get(initialVersion, key)
+		errShouldBe(t, err, ErrNotFound)
 		isTrue(t, gotVal == "")
 
 		gotVersion, err := m.Set(initialVersion, key, val)
 		errIsNil(t, err)
 		versionShouldBe(t, gotVersion, 1)
 
-		gotVal, found = m.Get(initialVersion, key)
-		isTrue(t, !found)
+		gotVal, err = m.Get(initialVersion, key)
+		errShouldBe(t, err, ErrNotFound)
 		isTrue(t, gotVal == "")
 
-		gotVal, found = m.Get(gotVersion, key)
-		isTrue(t, found)
+		gotVal, err = m.Get(gotVersion, key)
+		errIsNil(t, err)
 		isTrue(t, gotVal == val)
 	})
 
@@ -99,12 +99,12 @@ func TestMap_with_GetSet(t *testing.T) {
 		errIsNil(t, err)
 		versionShouldBe(t, v, 2)
 
-		val, found := m.Get(1, "a")
-		isTrue(t, found)
+		val, err := m.Get(1, "a")
+		errIsNil(t, err)
 		isTrue(t, val == "1")
 
-		val, found = m.Get(2, "a")
-		isTrue(t, found)
+		val, err = m.Get(2, "a")
+		errIsNil(t, err)
 		isTrue(t, val == "2")
 	})
 
@@ -128,8 +128,8 @@ func TestMap_with_GetSet(t *testing.T) {
 		_, err := m.Set(0, "a", "1")
 		errIsNil(t, err)
 
-		val, found := m.Get(2, "a")
-		isTrue(t, !found)
+		val, err := m.Get(2, "a")
+		errShouldBe(t, err, ErrNotFound)
 		isTrue(t, val == "")
 	})
 
@@ -139,102 +139,102 @@ func TestMap_with_GetSet(t *testing.T) {
 		m := getBranchedMap(t)
 
 		type testCase struct {
-			givenVersion  uint64
-			givenKey      string
-			valShouldBe   string
-			foundShouldBe bool
+			givenVersion uint64
+			givenKey     string
+			valShouldBe  string
+			errShouldBe  error
 		}
 
 		testCases := make([]testCase, 0, 6)
 		testCases = append(testCases,
 			testCase{
-				givenVersion:  0,
-				givenKey:      "a",
-				valShouldBe:   "",
-				foundShouldBe: false,
+				givenVersion: 0,
+				givenKey:     "a",
+				valShouldBe:  "",
+				errShouldBe:  ErrNotFound,
 			})
 
 		for v := range 5 {
 			testCases = append(testCases, testCase{
-				givenVersion:  uint64(v + 1),
-				givenKey:      "a",
-				valShouldBe:   "0",
-				foundShouldBe: true,
+				givenVersion: uint64(v + 1),
+				givenKey:     "a",
+				valShouldBe:  "0",
+				errShouldBe:  nil,
 			})
 		}
 
 		otherTestCases := []testCase{
 			{
-				givenVersion:  0,
-				givenKey:      "b",
-				valShouldBe:   "",
-				foundShouldBe: false,
+				givenVersion: 0,
+				givenKey:     "b",
+				valShouldBe:  "",
+				errShouldBe:  ErrNotFound,
 			},
 			{
-				givenVersion:  0,
-				givenKey:      "c",
-				valShouldBe:   "",
-				foundShouldBe: false,
+				givenVersion: 0,
+				givenKey:     "c",
+				valShouldBe:  "",
+				errShouldBe:  ErrNotFound,
 			},
 			{
-				givenVersion:  1,
-				givenKey:      "b",
-				valShouldBe:   "",
-				foundShouldBe: false,
+				givenVersion: 1,
+				givenKey:     "b",
+				valShouldBe:  "",
+				errShouldBe:  ErrNotFound,
 			},
 			{
-				givenVersion:  1,
-				givenKey:      "c",
-				valShouldBe:   "",
-				foundShouldBe: false,
+				givenVersion: 1,
+				givenKey:     "c",
+				valShouldBe:  "",
+				errShouldBe:  ErrNotFound,
 			},
 			{
-				givenVersion:  2,
-				givenKey:      "b",
-				valShouldBe:   "1",
-				foundShouldBe: true,
+				givenVersion: 2,
+				givenKey:     "b",
+				valShouldBe:  "1",
+				errShouldBe:  nil,
 			},
 			{
-				givenVersion:  2,
-				givenKey:      "c",
-				valShouldBe:   "",
-				foundShouldBe: false,
+				givenVersion: 2,
+				givenKey:     "c",
+				valShouldBe:  "",
+				errShouldBe:  ErrNotFound,
 			},
 			{
-				givenVersion:  3,
-				givenKey:      "b",
-				valShouldBe:   "",
-				foundShouldBe: false,
+				givenVersion: 3,
+				givenKey:     "b",
+				valShouldBe:  "",
+				errShouldBe:  ErrNotFound,
 			},
 			{
-				givenVersion:  3,
-				givenKey:      "c",
-				valShouldBe:   "1",
-				foundShouldBe: true,
+				givenVersion: 3,
+				givenKey:     "c",
+				valShouldBe:  "1",
+				errShouldBe:  nil,
 			},
 			{
-				givenVersion:  4,
-				givenKey:      "b",
-				valShouldBe:   "1",
-				foundShouldBe: true,
+				givenVersion: 4,
+				givenKey:     "b",
+				valShouldBe:  "1",
+				errShouldBe:  nil,
 			},
 			{
-				givenVersion:  4,
-				givenKey:      "c",
-				valShouldBe:   "2",
-				foundShouldBe: true,
+				givenVersion: 4,
+				givenKey:     "c",
+				valShouldBe:  "2",
+				errShouldBe:  nil,
 			},
 			{
-				givenVersion:  5,
-				givenKey:      "b",
-				valShouldBe:   "2",
-				foundShouldBe: true,
+				givenVersion: 5,
+				givenKey:     "b",
+				valShouldBe:  "2",
+				errShouldBe:  nil,
 			},
 			{
-				givenVersion:  5,
-				givenKey:      "c",
-				valShouldBe:   "1",
-				foundShouldBe: true,
+				givenVersion: 5,
+				givenKey:     "c",
+				valShouldBe:  "1",
+				errShouldBe:  nil,
 			},
 		}
 
@@ -246,9 +246,9 @@ func TestMap_with_GetSet(t *testing.T) {
 				singleCase.givenVersion,
 				singleCase.givenKey,
 				singleCase.valShouldBe,
-				singleCase.foundShouldBe)
-			gotVal, found := m.Get(singleCase.givenVersion, singleCase.givenKey)
-			isTrue(t, found == singleCase.foundShouldBe)
+				singleCase.errShouldBe)
+			gotVal, err := m.Get(singleCase.givenVersion, singleCase.givenKey)
+			errShouldBe(t, err, singleCase.errShouldBe)
 			isTrue(t, gotVal == singleCase.valShouldBe)
 		}
 	})
@@ -265,12 +265,12 @@ func TestMap_with_GetSetDelete(t *testing.T) {
 		errIsNil(t, err)
 		versionShouldBe(t, v, 1)
 
-		v, ok := m.Delete(1, "a")
-		isTrue(t, ok)
+		v, err = m.Delete(1, "a")
+		errIsNil(t, err)
 		versionShouldBe(t, v, 2)
 
-		val, found := m.Get(2, "a")
-		isTrue(t, !found)
+		val, err := m.Get(2, "a")
+		errShouldBe(t, err, ErrNotFound)
 		isTrue(t, val == "")
 	})
 
@@ -284,8 +284,8 @@ func TestMap_with_GetSetDelete(t *testing.T) {
 		errIsNil(t, err)
 		versionShouldBe(t, v, 1)
 
-		v, ok := m.Delete(1, "b")
-		isTrue(t, !ok)
+		v, err = m.Delete(1, "b")
+		errShouldBe(t, err, ErrNotFound)
 		versionShouldBe(t, v, 0)
 	})
 
@@ -299,8 +299,8 @@ func TestMap_with_GetSetDelete(t *testing.T) {
 		errIsNil(t, err)
 		versionShouldBe(t, v, 1)
 
-		v, ok := m.Delete(2, "a")
-		isTrue(t, !ok)
+		v, err = m.Delete(2, "a")
+		errShouldBe(t, err, ErrNotFound)
 		versionShouldBe(t, v, 0)
 	})
 }
@@ -380,8 +380,8 @@ func TestMap_Len(t *testing.T) {
 		errIsNil(t, err)
 		versionShouldBe(t, v, 1)
 
-		v, ok := m.Delete(1, "a")
-		isTrue(t, ok)
+		v, err = m.Delete(1, "a")
+		errIsNil(t, err)
 		versionShouldBe(t, v, 2)
 
 		size, err := m.Len(1)
@@ -526,8 +526,8 @@ func TestMap_ToGoMap(t *testing.T) {
 		errIsNil(t, err)
 		versionShouldBe(t, v, 1)
 
-		v, ok := m.Delete(1, "a")
-		isTrue(t, ok)
+		v, err = m.Delete(1, "a")
+		errIsNil(t, err)
 		versionShouldBe(t, v, 2)
 
 		gotMap, err := m.ToGoMap(1)
