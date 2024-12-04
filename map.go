@@ -17,8 +17,8 @@ var ErrMapInitialize = errors.New("failed to init Map because version tree is da
 //
 // Note that Map is not thread safe.
 type Map[TKey comparable, TVal any] struct {
-	versionTree *internal.VersionTree[mapVersionInfo]
-	nodes       map[TKey]*internal.FatNode
+	versionTree   *internal.VersionTree[mapVersionInfo]
+	mapOfFatNodes map[TKey]*internal.FatNode
 }
 
 type mapVersionInfo struct {
@@ -33,8 +33,8 @@ func NewMap[TKey comparable, TVal any]() (*Map[TKey, TVal], uint64) {
 // NewMapWithCapacity creates empty Map with given capacity.
 func NewMapWithCapacity[TKey comparable, TVal any](capacity int) (*Map[TKey, TVal], uint64) {
 	m := &Map[TKey, TVal]{
-		versionTree: internal.NewVersionTree[mapVersionInfo](),
-		nodes:       make(map[TKey]*internal.FatNode, capacity),
+		versionTree:   internal.NewVersionTree[mapVersionInfo](),
+		mapOfFatNodes: make(map[TKey]*internal.FatNode, capacity),
 	}
 
 	var (
@@ -68,11 +68,11 @@ func (m *Map[TKey, TVal]) Set(forVersion uint64, key TKey, val TVal) (uint64, er
 		size: oldVersionInfo.size,
 	}
 
-	fatNode, exists := m.nodes[key]
+	fatNode, exists := m.mapOfFatNodes[key]
 	if !exists {
 		// adding new key
 		newFatNode := internal.NewFatNode(val, newVersion)
-		m.nodes[key] = newFatNode
+		m.mapOfFatNodes[key] = newFatNode
 
 		newVersionInfo.size += 1
 
@@ -105,7 +105,7 @@ func (m *Map[TKey, TVal]) Set(forVersion uint64, key TKey, val TVal) (uint64, er
 //   - m - amount of modifications for current key from map creation.
 //   - k - amount of modifications visible from current branch.
 func (m *Map[TKey, TVal]) Get(version uint64, key TKey) (TVal, bool) {
-	fatNode, exists := m.nodes[key]
+	fatNode, exists := m.mapOfFatNodes[key]
 	if !exists {
 		return *new(TVal), false
 	}
@@ -130,7 +130,9 @@ func (m *Map[TKey, TVal]) Get(version uint64, key TKey) (TVal, bool) {
 		return *new(TVal), false
 	}
 
-	// zero version is always inside change history, and for the last version
+	// zero version is always inside change history and has no values,
+	// and we already checked val existence for given version,
+	// so skip iterations if there are only 2 version: zero and given version
 	if len(changeHistory) == 1 || len(changeHistory) == 2 {
 		return *new(TVal), false
 	}
@@ -165,7 +167,7 @@ func (m *Map[TKey, TVal]) Len(forVersion uint64) (int, error) {
 //
 // Complexity: same as for Get.
 func (m *Map[TKey, TVal]) Delete(forVersion uint64, key TKey) (uint64, bool) {
-	existedFatNode, keyExists := m.nodes[key]
+	existedFatNode, keyExists := m.mapOfFatNodes[key]
 	if !keyExists {
 		// no key to delete
 		return 0, false
@@ -188,7 +190,7 @@ func (m *Map[TKey, TVal]) Delete(forVersion uint64, key TKey) (uint64, bool) {
 	}
 
 	existedFatNode.Update(nil, newVersion)
-	m.nodes[key] = existedFatNode
+	m.mapOfFatNodes[key] = existedFatNode
 
 	_ = m.versionTree.SetVersionInfo(newVersion, newVersionInfo)
 
@@ -206,7 +208,7 @@ func (m *Map[TKey, TVal]) ToGoMap(version uint64) (map[TKey]TVal, error) {
 	}
 
 	resMap := make(map[TKey]TVal, versionInfo.size)
-	for k := range m.nodes {
+	for k := range m.mapOfFatNodes {
 		val, exists := m.Get(version, k)
 		if exists {
 			resMap[k] = val
