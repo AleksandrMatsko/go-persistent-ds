@@ -155,7 +155,7 @@ func TestMap_with_GetSet(t *testing.T) {
 				errShouldBe:  ErrNotFound,
 			})
 
-		for v := range 5 {
+		for v := 0; v < 5; v++ {
 			testCases = append(testCases, testCase{
 				givenVersion: uint64(v + 1),
 				givenKey:     "a",
