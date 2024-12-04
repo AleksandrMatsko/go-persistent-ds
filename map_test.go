@@ -2,9 +2,10 @@ package main
 
 import (
 	"errors"
-	"go-persistent-ds/internal"
 	"maps"
 	"testing"
+
+	"go-persistent-ds/internal"
 )
 
 func versionShouldBe(t *testing.T, got, expected uint64) {
