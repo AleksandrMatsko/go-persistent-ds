@@ -43,11 +43,11 @@ linters:
     - asciicheck
     - bidichk
     - bodyclose
+    - copyloopvar
     - decorder
     - dogsled
     - errcheck
     - errorlint
-    - exportloopref
     - goconst
     - gocheckcompilerdirectives
     - gocyclo
