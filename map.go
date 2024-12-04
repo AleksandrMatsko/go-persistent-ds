@@ -15,7 +15,7 @@ var (
 
 // Map is a persistent implementation of go map.
 // While working with map you can access and/or modify each previous version.
-// Note that modifying new version creates new one.
+// Note that modifying version creates new one.
 //
 // Map can perform total of 2^65-1 modifications, and will panic on attempt to modify it for 2^65 time.
 // If you need to continue editing Map, the good idea is to use ToGoMap method to dump Map for special version.
@@ -103,8 +103,8 @@ func (m *Map[TKey, TVal]) Set(forVersion uint64, key TKey, val TVal) (uint64, er
 	return newVersion, nil
 }
 
-// Get returns a pair of value and bool for provided version and key.
-// Bool tells if the value for such key and version exists.
+// Get returns a pair of value and error for provided version and key.
+// If error is nil then the value for such key and version exists.
 //
 // Complexity: O(log(m) * k) there:
 //   - m - amount of modifications for current key from map creation.
@@ -205,7 +205,7 @@ func (m *Map[TKey, TVal]) Delete(forVersion uint64, key TKey) (uint64, error) {
 // ToGoMap converts persistent Map for specified version into go map.
 //
 // Complexity: O(Get) * n, there:
-//   - n - amount of different keys in map from creation;
+//   - n - amount of different keys in map from creation.
 func (m *Map[TKey, TVal]) ToGoMap(version uint64) (map[TKey]TVal, error) {
 	versionInfo, err := m.versionTree.GetVersionInfo(version)
 	if err != nil {
