@@ -82,6 +82,11 @@ func (vt *VersionTree[T]) SetVersionInfo(version uint64, info T) error {
 	return nil
 }
 
+// GetCurrentVersion returns current(latest) version in VersionTree.
+func (vt *VersionTree[T]) GetCurrentVersion() uint64 {
+	return vt.versionMachine.GetVersion()
+}
+
 func newVersionTreeNode[T any](v uint64, parent *versionTreeNode[T]) *versionTreeNode[T] {
 	return &versionTreeNode[T]{
 		version:  v,
