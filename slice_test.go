@@ -261,7 +261,7 @@ func TestSlice_Set(t *testing.T) {
 		versionShouldBe(t, v, 1)
 
 		v, err = s.Set(2, 1, "b")
-		errShouldBe(t, err, ErrIndexOutOfRange)
+		errShouldBe(t, err, internal.ErrVersionNotFound)
 		versionShouldBe(t, v, 0)
 	})
 
@@ -314,6 +314,29 @@ func TestSlice_Len(t *testing.T) {
 		size, err := s.Len(2)
 		errShouldBe(t, err, internal.ErrVersionNotFound)
 		isTrue(t, size == 0)
+	})
+
+	t.Run("With Append and Set", func(t *testing.T) {
+		t.Parallel()
+
+		s, initialVersion := NewSlice[string]()
+		versionShouldBe(t, initialVersion, 0)
+
+		v, err := s.Append(0, "a")
+		errIsNil(t, err)
+		versionShouldBe(t, v, 1)
+
+		v, err = s.Set(1, 0, "b")
+		errIsNil(t, err)
+		versionShouldBe(t, v, 2)
+
+		size, err := s.Len(1)
+		errIsNil(t, err)
+		isTrue(t, size == 1)
+
+		size, err = s.Len(2)
+		errIsNil(t, err)
+		isTrue(t, size == 1)
 	})
 
 	t.Run("With branched slice", func(t *testing.T) {
@@ -494,5 +517,59 @@ func TestSlice_Range(t *testing.T) {
 		v, err := s.Range(0, 0, 0)
 		errShouldBe(t, err, ErrIndexOutOfRange)
 		versionShouldBe(t, v, 0)
+	})
+
+	t.Run("With branched slice", func(t *testing.T) {
+		t.Parallel()
+
+		s := getBranchedSlice(t)
+
+		v, err := s.Range(4, 1, 2)
+		errIsNil(t, err)
+		versionShouldBe(t, v, 6)
+
+		slice, err := s.ToGoSlice(6)
+		errIsNil(t, err)
+		isTrue(t, slices.Equal(slice, []string{"b"}))
+
+		size, err := s.Len(6)
+		errIsNil(t, err)
+		isTrue(t, size == 1)
+
+		v, err = s.Append(6, "d")
+		errIsNil(t, err)
+		versionShouldBe(t, v, 7)
+
+		slice, err = s.ToGoSlice(7)
+		errIsNil(t, err)
+		isTrue(t, slices.Equal(slice, []string{"b", "d"}))
+
+		size, err = s.Len(7)
+		errIsNil(t, err)
+		isTrue(t, size == 2)
+
+		v, err = s.Append(7, "e")
+		errIsNil(t, err)
+		versionShouldBe(t, v, 8)
+
+		slice, err = s.ToGoSlice(8)
+		errIsNil(t, err)
+		isTrue(t, slices.Equal(slice, []string{"b", "d", "e"}))
+
+		size, err = s.Len(8)
+		errIsNil(t, err)
+		isTrue(t, size == 3)
+
+		v, err = s.Set(8, 2, "f")
+		errIsNil(t, err)
+		versionShouldBe(t, v, 9)
+
+		slice, err = s.ToGoSlice(9)
+		errIsNil(t, err)
+		isTrue(t, slices.Equal(slice, []string{"b", "d", "f"}))
+
+		size, err = s.Len(9)
+		errIsNil(t, err)
+		isTrue(t, size == 3)
 	})
 }

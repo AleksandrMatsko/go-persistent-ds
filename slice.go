@@ -63,13 +63,20 @@ func NewSliceWithCapacity[TVal any](capacity int) (*Slice[TVal], uint64) {
 
 // Set value for given index and version in Slice.
 //
-// Complexity: same as for Get.
+// Complexity: O(1).
 func (s *Slice[TVal]) Set(forVersion uint64, index int, val TVal) (uint64, error) {
 	if index < 0 {
 		return 0, ErrIndexOutOfRange
 	}
 
-	if len(s.sliceOfFatNodes) <= index {
+	oldVersionInfo, err := s.versionTree.GetVersionInfo(forVersion)
+	if err != nil {
+		return 0, err
+	}
+
+	actualIndex := oldVersionInfo.startIndex + index
+
+	if len(s.sliceOfFatNodes) <= actualIndex {
 		return 0, ErrIndexOutOfRange
 	}
 
@@ -77,19 +84,13 @@ func (s *Slice[TVal]) Set(forVersion uint64, index int, val TVal) (uint64, error
 		return 0, ErrIndexOutOfRange
 	}
 
-	fatNode := s.sliceOfFatNodes[index]
-
-	_, err := s.Get(forVersion, index)
-	if err != nil {
-		return 0, err
-	}
+	fatNode := s.sliceOfFatNodes[actualIndex]
 
 	newVersion, err := s.versionTree.Update(forVersion)
 	if err != nil {
 		return 0, err
 	}
 
-	oldVersionInfo, _ := s.versionTree.GetVersionInfo(forVersion)
 	newVersionInfo := sliceVersionInfo{
 		size:       oldVersionInfo.size,
 		startIndex: oldVersionInfo.startIndex,
@@ -190,7 +191,7 @@ func (s *Slice[TVal]) Append(version uint64, val TVal) (uint64, error) {
 		newFatNode := internal.NewFatNode(val, newVersion)
 		s.sliceOfFatNodes = append(s.sliceOfFatNodes, newFatNode)
 	} else {
-		existedFatNode := s.sliceOfFatNodes[oldVersionInfo.size]
+		existedFatNode := s.sliceOfFatNodes[actualIndex]
 		existedFatNode.Update(val, newVersion)
 	}
 
