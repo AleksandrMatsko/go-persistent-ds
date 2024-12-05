@@ -2,11 +2,12 @@ package main
 
 import (
 	"errors"
+
 	"go-persistent-ds/internal"
 )
 
 var (
-	// ErrSliceInitialize is returned then there is a problem in creating new tree.
+	// ErrSliceInitialize is returned then there is a problem in creating new slice because of tree problems.
 	ErrSliceInitialize = errors.New("failed to init Slice because version tree is damaged")
 	// ErrIndexOutOfRange is returned then index is greater than len array for the version.
 	ErrIndexOutOfRange = errors.New("array index out of range")
@@ -106,7 +107,7 @@ func (s *Slice[TVal]) Set(forVersion uint64, index int, val TVal) (uint64, error
 // If error is nil then value for such index and version exists.
 //
 // Complexity: O(log(m) * k) there:
-//   - m - amount of modifications for current key from map creation.
+//   - m - amount of modifications for value by the index from slice creation.
 //   - k - amount of modifications visible from current branch.
 func (s *Slice[TVal]) Get(version uint64, index int) (TVal, error) {
 	if index < 0 {
@@ -166,7 +167,7 @@ func (s *Slice[TVal]) Len(version uint64) (int, error) {
 	return info.size, nil
 }
 
-// Append adds the value to the end of Slice of given version..
+// Append adds the value to the end of Slice of given version.
 //
 // Complexity: O(1).
 func (s *Slice[TVal]) Append(version uint64, val TVal) (uint64, error) {
@@ -225,7 +226,7 @@ func (s *Slice[TVal]) ToGoSlice(forVersion uint64) ([]TVal, error) {
 }
 
 // Range takes the range of Slice for given version from startIndex (inclusive) to
-// endIndex (notInclusive).
+// endIndex (not inclusive).
 //
 // Complexity: O(1).
 func (s *Slice[TVal]) Range(forVersion uint64, startIndex, endIndex int) (uint64, error) {

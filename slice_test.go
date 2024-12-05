@@ -1,9 +1,10 @@
 package main
 
 import (
-	"go-persistent-ds/internal"
 	"slices"
 	"testing"
+
+	"go-persistent-ds/internal"
 )
 
 func getBranchedSlice(t *testing.T) *Slice[string] {
@@ -393,7 +394,6 @@ func TestSlice_Len(t *testing.T) {
 			errShouldBe(t, gotErr, c.expectedErr)
 			isTrue(t, gotLen == c.expectedLen)
 		}
-
 	})
 }
 
