@@ -1,34 +1,9 @@
 package main
 
 import (
-	"errors"
 	"go-persistent-ds/internal"
 	"testing"
 )
-
-func versionShouldBe(t *testing.T, got, expected uint64) {
-	if got != expected {
-		t.Errorf("expected version: %v, got: %v", expected, got)
-	}
-}
-
-func isTrue(t *testing.T, flag bool) {
-	if !flag {
-		t.Errorf("expected true, got false")
-	}
-}
-
-func errIsNil(t *testing.T, err error) {
-	if err != nil {
-		t.Errorf("error should be nil, but got %T: %s", err, err)
-	}
-}
-
-func errShouldBe(t *testing.T, gotErr error, expectedErr error) {
-	if !errors.Is(gotErr, expectedErr) {
-		t.Errorf("expected err: (%T: %s), got: (%T: %s)", expectedErr, expectedErr, gotErr, gotErr)
-	}
-}
 
 func getBranchedSlice(t *testing.T) *Slice[string] {
 	s, initialVersion := NewSlice[string]()
