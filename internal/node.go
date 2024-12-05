@@ -28,7 +28,7 @@ func (fn *FatNode) Update(data interface{}, newVersion uint64) {
 }
 
 // FindByVersion finds needed version of object inside FatNode using binary search.
-// If the version is not found, then the pair (nil, -1, false) is returned.
+// If the version is not found, then the pair (nil, 0, false) is returned.
 func (fn *FatNode) FindByVersion(version uint64) (interface{}, uint64, bool) {
 	left, right := 0, len(fn.nodes)-1
 
