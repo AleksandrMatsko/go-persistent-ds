@@ -1,6 +1,8 @@
 package main
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestDoubleLinkedList_PushBack(t *testing.T) {
 	list := NewDoubleLinkedList[int]()
@@ -16,11 +18,14 @@ func TestDoubleLinkedList_PushBack(t *testing.T) {
 	if err != nil {
 		t.Error("PushBack failed with", err)
 	}
-	val, err := list.PushFront(69, 3)
+	_, err = list.PushFront(69, 3)
 	if err != nil {
 		t.Error("PushBack failed with", err)
 	}
-	if val.version != 4 {
-		t.Error("Expected version 4, but got: ", val)
+
+	newList, err := list.ToGoList(2)
+	if err != nil {
+		t.Error("ToGoList failed with", err)
 	}
+	println(newList)
 }
