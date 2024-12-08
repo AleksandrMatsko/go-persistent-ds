@@ -22,20 +22,23 @@ type DoubleLinkedList[T any] struct {
 
 type listInfo struct {
 	listSize int
-	root     *ListNode
-}
-
-type ListNode struct {
-	FatNodeNumber uint64
-	prev, next    *ListNode
+	root     *list.List
 }
 
 // NewDoubleLinkedList creates new empty DoubleLinkedList.
 func NewDoubleLinkedList[T any]() *DoubleLinkedList[T] {
-	return &DoubleLinkedList[T]{
+	newList := &DoubleLinkedList[T]{
 		versionTree: internal.NewVersionTree[listInfo](),
 		storage:     make([]*internal.FatNode, 0),
 	}
+	err := newList.versionTree.SetVersionInfo(0, listInfo{
+		listSize: 0,
+		root:     list.New(),
+	})
+	if err != nil {
+		return nil
+	}
+	return newList
 }
 
 // PushFront adds new element to the end of the DoubleLinkedList. Returns list's new version.
@@ -64,16 +67,23 @@ func (l *DoubleLinkedList[T]) Update(version uint64, index int, value T) (uint64
 		return 0, ErrIndexOutOfRange
 	}
 
-	currentNode := info.root.next
+	currentNode := info.root.Front()
 	for i := 0; i < index; i++ {
-		currentNode = currentNode.next
+		currentNode = currentNode.Next()
 	}
 
 	newVersion, err := l.versionTree.Update(version)
 	if err != nil {
 		return 0, err
 	}
-	l.storage[currentNode.FatNodeNumber].Update(value, newVersion)
+	err = l.versionTree.SetVersionInfo(newVersion, listInfo{
+		listSize: info.listSize,
+		root:     info.root,
+	})
+	if err != nil {
+		return 0, err
+	}
+	l.storage[currentNode.Value.(int)].Update(value, newVersion)
 	return newVersion, nil
 }
 
@@ -106,12 +116,11 @@ func (l *DoubleLinkedList[T]) Remove(version uint64, index int) (uint64, error) 
 		return 0, err
 	}
 
-	node := info.root.next
+	node := info.root.Front()
 	for i := 0; i < index; i++ {
-		node = node.next
+		node = node.Next()
 	}
-	node.prev.next = node.next
-	node.next.prev = node.prev
+	info.root.Remove(node)
 
 	return v, nil
 }
@@ -128,12 +137,12 @@ func (l *DoubleLinkedList[T]) Get(version uint64, index int) (T, error) {
 		return *new(T), ErrIndexOutOfRange
 	}
 
-	node := info.root.next
+	node := info.root.Front()
 	for i := 0; i < index; i++ {
-		node = node.next
+		node = node.Next()
 	}
 
-	fatNode := l.storage[node.FatNodeNumber]
+	fatNode := l.storage[node.Value.(int)]
 	val, _, found := fatNode.FindByVersion(version)
 	if !found {
 		changeHistory, err := l.versionTree.GetHistory(version)
@@ -191,44 +200,19 @@ func (l *DoubleLinkedList[T]) push(value T, version uint64, isFront bool) (uint6
 		return 0, err
 	}
 
-	var newRoot *ListNode
-	if oldVersion.listSize == 0 {
-		newRoot = &ListNode{
-			FatNodeNumber: 0,
-			prev:          nil,
-			next:          nil,
-		}
-		// making loop.
-		newRoot.prev = newRoot
-		newRoot.next = newRoot
-
-		err = l.versionTree.SetVersionInfo(newVersion, listInfo{
-			listSize: 1,
-			root:     newRoot,
-		})
-		if err != nil {
-			return 0, err
-		}
+	newSeq := deepCopy(oldVersion.root)
+	if isFront {
+		newSeq.PushFront(oldVersion.listSize)
 	} else {
-		if isFront {
-			newRoot = insert(&ListNode{FatNodeNumber: uint64(oldVersion.listSize)}, deepCopy(oldVersion.root))
-			err = l.versionTree.SetVersionInfo(newVersion, listInfo{
-				listSize: oldVersion.listSize + 1,
-				root:     newRoot,
-			})
-			if err != nil {
-				return 0, err
-			}
-		} else {
-			newRoot = insert(&ListNode{FatNodeNumber: uint64(oldVersion.listSize)}, deepCopy(oldVersion.root.prev))
-			err = l.versionTree.SetVersionInfo(newVersion, listInfo{
-				listSize: oldVersion.listSize + 1,
-				root:     newRoot,
-			})
-			if err != nil {
-				return 0, err
-			}
-		}
+		newSeq.PushBack(oldVersion.listSize)
+	}
+
+	err = l.versionTree.SetVersionInfo(newVersion, listInfo{
+		listSize: oldVersion.listSize + 1,
+		root:     newSeq,
+	})
+	if err != nil {
+		return 0, err
 	}
 
 	l.storage = append(l.storage, internal.NewFatNode(value, newVersion))
@@ -236,41 +220,13 @@ func (l *DoubleLinkedList[T]) push(value T, version uint64, isFront bool) (uint6
 	return newVersion, nil
 }
 
-// insert inserts newNode after prevNode.
-func insert(newNode *ListNode, prevNode *ListNode) *ListNode {
-	newNode.prev = prevNode
-	newNode.next = prevNode.next
-	newNode.prev.next = newNode
-
-	return newNode
-}
-
-// deepCopy creates full copy of the given list.
-func deepCopy(oldRoot *ListNode) *ListNode {
-	if oldRoot == nil {
-		return nil
+func deepCopy(original *list.List) *list.List {
+	newList := list.New()
+	for e := original.Front(); e != nil; e = e.Next() {
+		if e.Value != nil {
+			newList.PushBack(e.Value)
+		}
 	}
 
-	// Creating copy of first node.
-	newHead := &ListNode{FatNodeNumber: oldRoot.FatNodeNumber}
-	currentOriginal := oldRoot.next
-	currentNew := newHead
-
-	// Copying rest until reach the start point.
-	for currentOriginal != oldRoot {
-		newNode := &ListNode{FatNodeNumber: currentOriginal.FatNodeNumber}
-
-		// Connecting previous node with newNode.
-		currentNew.next = newNode
-		newNode.prev = currentNew
-
-		currentNew = newNode
-		currentOriginal = currentOriginal.next
-	}
-
-	// Looping ends.
-	newHead.prev = currentNew
-	currentNew.next = newHead
-
-	return newHead
+	return newList
 }
