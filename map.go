@@ -59,6 +59,11 @@ func NewMapWithCapacity[TKey comparable, TVal any](capacity int) (*Map[TKey, TVa
 	return m, 0
 }
 
+// NewMapWithAnyValues creates a Map, that can store values of any type.
+func NewMapWithAnyValues[TKey comparable]() (*Map[TKey, any], uint64) {
+	return NewMapWithCapacity[TKey, any](0)
+}
+
 // Set value for given key and version in Map.
 //
 // Complexity: same as for Get.

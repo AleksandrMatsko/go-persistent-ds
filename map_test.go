@@ -605,3 +605,58 @@ func TestMap_ToGoMap(t *testing.T) {
 		}
 	})
 }
+
+func TestMapWithAnyTypes(t *testing.T) {
+	t.Run("Set and Get values ok", func(t *testing.T) {
+		t.Parallel()
+
+		m, v := NewMapWithAnyValues[string]()
+		versionShouldBe(t, v, 0)
+
+		v, err := m.Set(0, "a", "a")
+		errIsNil(t, err)
+		versionShouldBe(t, v, 1)
+
+		v, err = m.Set(1, "1", 1)
+		errIsNil(t, err)
+		versionShouldBe(t, v, 2)
+
+		v, err = m.Set(2, "map", map[string]string{})
+		errIsNil(t, err)
+		versionShouldBe(t, v, 3)
+
+		v, err = m.Set(3, "slice", []uint64{})
+		errIsNil(t, err)
+		versionShouldBe(t, v, 4)
+
+		val, err := m.Get(4, "a")
+		errIsNil(t, err)
+		isTrue(t, val == "a")
+
+		val, err = m.Get(4, "1")
+		errIsNil(t, err)
+		isTrue(t, val == 1)
+
+		val, err = m.Get(4, "map")
+		errIsNil(t, err)
+		isTrue(t, func() bool {
+			castedVal, ok := val.(map[string]string)
+			if !ok {
+				return false
+			}
+
+			return len(castedVal) == 0
+		}())
+
+		val, err = m.Get(4, "slice")
+		errIsNil(t, err)
+		isTrue(t, func() bool {
+			castedVal, ok := val.([]uint64)
+			if !ok {
+				return false
+			}
+
+			return len(castedVal) == 0
+		}())
+	})
+}
