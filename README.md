@@ -46,3 +46,12 @@
 - Язык программирования -  [`Go`](https://go.dev/)
 - Система контроля версий - `git`
 - CI/CD - [`GitHub Actions`](https://github.com/features/actions)
+
+## Реализованные дополнительные требования
+
+- Произвольная вложенность данных.
+- Конвертация persistent структур в соответствующие структуры данных языка Go:
+  - `Map[TKey, TVal]` -> `map[TKey]TVal` c помощью `ToGoMap`
+  - `Slice[TVal]` -> `[]TVal` c помощью `ToGoSlice`
+  - `DoubleLinkedList[TVal]` -> `list.List` (из пакета `container/list` стандартной библиотеки языка Go) с помощью `ToGoList`
+- Для `Slice` реализован метод `Range` (аналог `slice[i:j]` из Go), позволяющий создавать срез исходного `Slice` и далее работать с ним также, как и с обычным persistent `Slice`
