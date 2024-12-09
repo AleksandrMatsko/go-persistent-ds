@@ -7,7 +7,7 @@ import (
 )
 
 var ErrVersionNotFound = errors.New("version not found")
-var ErrIndexOutOfRange = errors.New("index out of range")
+var ErrListIndexOutOfRange = errors.New("index out of range")
 
 // DoubleLinkedList is a persistent implementation of double linked list.
 // While working with list you can add to the start and to the end, access elements by index and modify.
@@ -64,7 +64,7 @@ func (l *DoubleLinkedList[T]) Update(version uint64, index int, value T) (uint64
 		return 0, err
 	}
 	if index >= info.listSize {
-		return 0, ErrIndexOutOfRange
+		return 0, ErrListIndexOutOfRange
 	}
 
 	currentNode := info.root.Front()
@@ -108,19 +108,27 @@ func (l *DoubleLinkedList[T]) Remove(version uint64, index int) (uint64, error) 
 		return 0, err
 	}
 	if index >= info.listSize {
-		return 0, ErrIndexOutOfRange
+		return 0, ErrListIndexOutOfRange
 	}
+
+	newRoot := deepCopy(info.root)
+	node := newRoot.Front()
+	for i := 0; i < index; i++ {
+		node = node.Next()
+	}
+	newRoot.Remove(node)
 
 	v, err := l.versionTree.Update(version)
 	if err != nil {
 		return 0, err
 	}
-
-	node := info.root.Front()
-	for i := 0; i < index; i++ {
-		node = node.Next()
+	err = l.versionTree.SetVersionInfo(v, listInfo{
+		listSize: info.listSize - 1,
+		root:     newRoot,
+	})
+	if err != nil {
+		return 0, err
 	}
-	info.root.Remove(node)
 
 	return v, nil
 }
@@ -134,7 +142,7 @@ func (l *DoubleLinkedList[T]) Get(version uint64, index int) (T, error) {
 		return *new(T), err
 	}
 	if index >= info.listSize {
-		return *new(T), ErrIndexOutOfRange
+		return *new(T), ErrListIndexOutOfRange
 	}
 
 	node := info.root.Front()
