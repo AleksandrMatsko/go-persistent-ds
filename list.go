@@ -7,10 +7,7 @@ import (
 	"go-persistent-ds/internal"
 )
 
-var (
-	ErrVersionNotFound     = errors.New("version not found")
-	ErrListIndexOutOfRange = errors.New("index out of range")
-)
+var ErrListIndexOutOfRange = errors.New("index out of range")
 
 // DoubleLinkedList is a persistent implementation of double linked list.
 // While working with list you can add to the start and to the end, access elements by index and modify.
