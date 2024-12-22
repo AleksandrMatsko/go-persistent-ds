@@ -58,7 +58,7 @@ func NewDoubleLinkedList[T any]() *DoubleLinkedList[T] {
 	return newList
 }
 
-// PushFront adds new element to the end of the DoubleLinkedList. Returns list's new version.
+// PushFront adds new element to the head of the DoubleLinkedList. Returns list's new version.
 // Note: head->[1][2][3]<-tail.
 //
 // Complexity: O(n).
@@ -66,7 +66,7 @@ func (l *DoubleLinkedList[T]) PushFront(version uint64, value T) (uint64, error)
 	return l.push(value, version, true)
 }
 
-// PushBack adds new element to the start of the DoubleLinkedList. Returns list's new version.
+// PushBack adds new element to the tail of the DoubleLinkedList. Returns list's new version.
 // Note: head->[1][2][3]<-tail.
 //
 // Complexity: O(1).
@@ -76,7 +76,7 @@ func (l *DoubleLinkedList[T]) PushBack(version uint64, value T) (uint64, error) 
 
 // Update updates element of specified DoubleLinkedList version by index. Returns list's new version.
 //
-// Complexity: O(n), where n - DoubleLinkedList size.
+// Complexity: O(n * log(m)), where n - DoubleLinkedList size and m - is number of changes in FatNode
 func (l *DoubleLinkedList[T]) Update(version uint64, index int, value T) (uint64, error) {
 	info, err := l.versionTree.GetVersionInfo(version)
 	if err != nil {
@@ -86,10 +86,14 @@ func (l *DoubleLinkedList[T]) Update(version uint64, index int, value T) (uint64
 		return 0, ErrListIndexOutOfRange
 	}
 
+	changeHistory, err := l.versionTree.GetHistory(version)
+	if err != nil {
+		return 0, err
+	}
 	head := info.head
 	iterInfo := head
 	for i := 0; i < index; i++ {
-		node, _, _ := iterInfo.next.FindClosestByVersion(version)
+		node := l.findNodeByChangeHistory(iterInfo.next, changeHistory, version)
 		iterInfo = node.(*infoNode)
 	}
 
@@ -126,7 +130,7 @@ func (l *DoubleLinkedList[T]) Len(version uint64) (int, error) {
 // Remove removes element from specified version of DoubleLinkedList by index and returns new list's version.
 // By removal, we mean delete of connection between specified element and his "neighbours".
 //
-// Complexity: O(n), where n - DoubleLinkedList size.
+// Complexity: O(n * log(m)), where n - DoubleLinkedList size and m - is number of changes in FatNode
 func (l *DoubleLinkedList[T]) Remove(version uint64, index int) (uint64, error) {
 	info, err := l.versionTree.GetVersionInfo(version)
 	if err != nil {
@@ -136,10 +140,14 @@ func (l *DoubleLinkedList[T]) Remove(version uint64, index int) (uint64, error) 
 		return 0, ErrListIndexOutOfRange
 	}
 
+	changeHistory, err := l.versionTree.GetHistory(version)
+	if err != nil {
+		return 0, err
+	}
 	head := info.head
 	iterInfo := head
 	for i := 0; i < index; i++ {
-		node, _, _ := iterInfo.next.FindClosestByVersion(version)
+		node := l.findNodeByChangeHistory(iterInfo.next, changeHistory, version)
 		iterInfo = node.(*infoNode)
 	}
 
@@ -148,8 +156,8 @@ func (l *DoubleLinkedList[T]) Remove(version uint64, index int) (uint64, error) 
 		return 0, err
 	}
 
-	previousNode, _, _ := iterInfo.prev.FindClosestByVersion(version)
-	nextNode, _, _ := iterInfo.next.FindClosestByVersion(version)
+	previousNode := l.findNodeByChangeHistory(iterInfo.prev, changeHistory, version)
+	nextNode := l.findNodeByChangeHistory(iterInfo.next, changeHistory, version)
 	prevInfo := previousNode.(*infoNode)
 	nextInfo := nextNode.(*infoNode)
 
@@ -173,7 +181,7 @@ func (l *DoubleLinkedList[T]) Remove(version uint64, index int) (uint64, error) 
 
 // Get retrieves value from the specified DoubleLinkedList version by index.
 //
-// Complexity: O(n), where n - DoubleLinkedList size.
+// Complexity: O(n * log(m)), where n - DoubleLinkedList size and m - is number of changes in FatNode
 func (l *DoubleLinkedList[T]) Get(version uint64, index int) (T, error) {
 	info, err := l.versionTree.GetVersionInfo(version)
 	if err != nil {
@@ -183,14 +191,18 @@ func (l *DoubleLinkedList[T]) Get(version uint64, index int) (T, error) {
 		return *new(T), ErrListIndexOutOfRange
 	}
 
+	changeHistory, err := l.versionTree.GetHistory(version)
+	if err != nil {
+		return *new(T), err
+	}
 	head := info.head
 	iterInfo := head
 	for i := 0; i < index; i++ {
-		node, _, _ := iterInfo.next.FindClosestByVersion(version)
+		node := l.findNodeByChangeHistory(iterInfo.next, changeHistory, version)
 		iterInfo = node.(*infoNode)
 	}
 
-	val, _, _ := iterInfo.value.FindClosestByVersion(version)
+	val := l.findNodeByChangeHistory(iterInfo.value, changeHistory, version)
 	return val.(T), nil
 }
 
@@ -282,4 +294,24 @@ func (l *DoubleLinkedList[T]) push(value T, version uint64, isFront bool) (uint6
 	}
 
 	return newVersion, nil
+}
+
+func (l *DoubleLinkedList[T]) findNodeByChangeHistory(fn *internal.FatNode, changeHistory []uint64, version uint64) interface{} {
+	val, _, found := fn.FindByVersion(version)
+	if found {
+		return val
+	}
+
+	if len(changeHistory) == 1 || len(changeHistory) == 2 {
+		return nil
+	}
+
+	for i := len(changeHistory) - 2; i >= 1; i-- {
+		val, _, found = fn.FindByVersion(changeHistory[i])
+		if found {
+			return val
+		}
+	}
+
+	return nil
 }

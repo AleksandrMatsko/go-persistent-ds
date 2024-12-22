@@ -47,30 +47,6 @@ func (fn *FatNode) FindByVersion(version uint64) (interface{}, uint64, bool) {
 	return nil, 0, false
 }
 
-func (fn *FatNode) FindClosestByVersion(version uint64) (interface{}, uint64, bool) {
-	left, right := 0, len(fn.nodes)-1
-	var closestIndex = -1
-
-	for left <= right {
-		mid := left + (right-left)/2
-
-		if fn.nodes[mid].version == version {
-			return fn.nodes[mid].data, fn.nodes[mid].version, true
-		} else if fn.nodes[mid].version < version {
-			closestIndex = mid
-			left = mid + 1
-		} else {
-			right = mid - 1
-		}
-	}
-
-	if closestIndex != -1 {
-		return fn.nodes[closestIndex].data, fn.nodes[closestIndex].version, false
-	}
-
-	return nil, 0, false
-}
-
 // newNode creates new node inside FatNode.
 func newNode(data interface{}, nodeVersion uint64) *node {
 	return &node{

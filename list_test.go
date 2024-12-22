@@ -1,7 +1,7 @@
 package main
 
 import (
-	list2 "container/list"
+	golist "container/list"
 	"errors"
 	"testing"
 )
@@ -20,27 +20,27 @@ func TestDoubleLinkedList_PushFront(t *testing.T) {
 	version, err := list.PushFront(3, 69)
 	errIsNil(t, err)
 
-	goList, err := list.ToGoList(version)
+	listFromPersistentList, err := list.ToGoList(version)
 	errIsNil(t, err)
 
-	if goList.Back().Value != 12 {
-		t.Error("Expected value of 12, got ", goList.Back().Value)
+	if listFromPersistentList.Back().Value != 12 {
+		t.Error("Expected value of 12, got ", listFromPersistentList.Back().Value)
 	}
 
-	if goList.Back().Prev().Value != 9 {
-		t.Error("Expected value of 9, got ", goList.Back().Value)
+	if listFromPersistentList.Back().Prev().Value != 9 {
+		t.Error("Expected value of 9, got ", listFromPersistentList.Back().Value)
 	}
 
-	if goList.Front().Value != 69 {
-		t.Error("Expected value of 69, got ", goList.Front().Value)
+	if listFromPersistentList.Front().Value != 69 {
+		t.Error("Expected value of 69, got ", listFromPersistentList.Front().Value)
 	}
 
-	if goList.Front().Next().Value != 90 {
-		t.Error("Expected value of 90, got ", goList.Front().Next().Value)
+	if listFromPersistentList.Front().Next().Value != 90 {
+		t.Error("Expected value of 90, got ", listFromPersistentList.Front().Next().Value)
 	}
 
-	if goList.Len() != 4 {
-		t.Error("Expected length of 4, got ", goList.Len())
+	if listFromPersistentList.Len() != 4 {
+		t.Error("Expected length of 4, got ", listFromPersistentList.Len())
 	}
 }
 
@@ -58,27 +58,27 @@ func TestDoubleLinkedList_PushBack(t *testing.T) {
 	version, err := list.PushBack(3, 69)
 	errIsNil(t, err)
 
-	goList, err := list.ToGoList(version)
+	listFromPersistentList, err := list.ToGoList(version)
 	errIsNil(t, err)
 
-	if goList.Back().Value != 69 {
-		t.Error("Expected value of 69, got ", goList.Back().Value)
+	if listFromPersistentList.Back().Value != 69 {
+		t.Error("Expected value of 69, got ", listFromPersistentList.Back().Value)
 	}
 
-	if goList.Back().Prev().Value != 90 {
-		t.Error("Expected value of 9, got ", goList.Back().Prev().Value)
+	if listFromPersistentList.Back().Prev().Value != 90 {
+		t.Error("Expected value of 9, got ", listFromPersistentList.Back().Prev().Value)
 	}
 
-	if goList.Front().Value != 12 {
-		t.Error("Expected value of 12, got ", goList.Front().Value)
+	if listFromPersistentList.Front().Value != 12 {
+		t.Error("Expected value of 12, got ", listFromPersistentList.Front().Value)
 	}
 
-	if goList.Front().Next().Value != 9 {
-		t.Error("Expected value of 9, got ", goList.Front().Next().Value)
+	if listFromPersistentList.Front().Next().Value != 9 {
+		t.Error("Expected value of 9, got ", listFromPersistentList.Front().Next().Value)
 	}
 
-	if goList.Len() != 4 {
-		t.Error("Expected length of 4, got ", goList.Len())
+	if listFromPersistentList.Len() != 4 {
+		t.Error("Expected length of 4, got ", listFromPersistentList.Len())
 	}
 }
 
@@ -93,20 +93,72 @@ func TestDoubleLinkedList_MixedPush(t *testing.T) {
 	version, err := list.PushFront(3, 69)
 	errIsNil(t, err)
 
-	goList, err := list.ToGoList(version)
+	listFromPersistentList, err := list.ToGoList(version)
 	errIsNil(t, err)
-	if goList.Back().Value != 90 {
-		t.Error("Expected value of 90, got ", goList.Back().Value)
+	if listFromPersistentList.Back().Value != 90 {
+		t.Error("Expected value of 90, got ", listFromPersistentList.Back().Value)
 	}
-	if goList.Back().Prev().Value != 12 {
-		t.Error("Expected value of 12, got ", goList.Back().Prev().Value)
+	if listFromPersistentList.Back().Prev().Value != 12 {
+		t.Error("Expected value of 12, got ", listFromPersistentList.Back().Prev().Value)
 	}
-	if goList.Front().Value != 69 {
-		t.Error("Expected value of 69, got ", goList.Front().Value)
+	if listFromPersistentList.Front().Value != 69 {
+		t.Error("Expected value of 69, got ", listFromPersistentList.Front().Value)
 	}
-	if goList.Front().Next().Value != 9 {
-		t.Error("Expected value of 9, got ", goList.Front().Next().Value)
+	if listFromPersistentList.Front().Next().Value != 9 {
+		t.Error("Expected value of 9, got ", listFromPersistentList.Front().Next().Value)
 	}
+}
+
+func TestDoubleLinkedList_ManyPushesInOneVersion(t *testing.T) {
+	list := NewDoubleLinkedList[string]()
+	_, err := list.PushBack(0, "anna")
+	errIsNil(t, err)
+	_, err = list.PushBack(1, "oleg")
+	errIsNil(t, err)
+	_, err = list.PushBack(1, "natalia")
+	errIsNil(t, err)
+	_, err = list.PushBack(1, "alexander")
+	errIsNil(t, err)
+
+	val, err := list.Get(2, 1)
+	if val != "oleg" {
+		t.Error("Expected oleg in version 2 at position 1, got ", val)
+	}
+	val, err = list.Get(3, 1)
+	if val != "natalia" {
+		t.Error("Expected natalia in version 3 at position 1, got ", val)
+	}
+	val, err = list.Get(4, 1)
+	if val != "alexander" {
+		t.Error("Expected alexander in version 3 at position 1, got ", val)
+	}
+}
+
+func TestDoubleLinkedList_BranchingCase(t *testing.T) {
+	list := NewDoubleLinkedList[string]()
+	_, err := list.PushBack(0, "anna")
+	errIsNil(t, err)
+	_, err = list.PushBack(1, "oleg")
+	errIsNil(t, err)
+	_, err = list.PushBack(2, "natalia")
+	errIsNil(t, err)
+	_, err = list.PushBack(3, "alexander")
+	errIsNil(t, err)
+
+	version, err := list.PushFront(2, "ilya")
+	errIsNil(t, err)
+	finVersion, err := list.PushBack(version, "filip")
+	errIsNil(t, err)
+
+	goList, err := list.ToGoList(finVersion)
+	errIsNil(t, err)
+	expectedList := golist.New()
+	expectedList.PushBack("anna")
+	expectedList.PushBack("oleg")
+	expectedList.PushFront("ilya")
+	expectedList.PushBack("filip")
+
+	compareLists(goList, expectedList, t)
 }
 
 func TestDoubleLinkedList_Len(t *testing.T) {
@@ -123,7 +175,7 @@ func TestDoubleLinkedList_Len(t *testing.T) {
 	version, err := list.PushBack(3, 69)
 	errIsNil(t, err)
 
-	goList, err := list.ToGoList(version)
+	listFromPersistentList, err := list.ToGoList(version)
 	errIsNil(t, err)
 
 	versionLength, err := list.Len(version)
@@ -131,8 +183,8 @@ func TestDoubleLinkedList_Len(t *testing.T) {
 	if versionLength != 4 {
 		t.Error("Expected persistent list length of 4, got ", versionLength)
 	}
-	if goList.Len() != 4 {
-		t.Error("Expected go list length of 4, got ", goList.Len())
+	if listFromPersistentList.Len() != 4 {
+		t.Error("Expected go list length of 4, got ", listFromPersistentList.Len())
 	}
 }
 
@@ -212,35 +264,16 @@ func TestDoubleLinkedList_ToGoList(t *testing.T) {
 	version, err := list.PushBack(3, 69)
 	errIsNil(t, err)
 
-	goList, err := list.ToGoList(version)
+	listFromPersistentList, err := list.ToGoList(version)
 	errIsNil(t, err)
 
-	list1 := list2.New()
-	list1.PushBack(12)
-	list1.PushBack(9)
-	list1.PushBack(90)
-	list1.PushBack(69)
+	expectedGoList := golist.New()
+	expectedGoList.PushBack(12)
+	expectedGoList.PushBack(9)
+	expectedGoList.PushBack(90)
+	expectedGoList.PushBack(69)
 
-	if goList.Len() != 4 && list1.Len() != 4 {
-		t.Errorf("Expected persistent list length of 4, got %d. Expected Go list length 4, got %d",
-			goList.Len(), list1.Len())
-	}
-	if goList.Back().Value != list1.Back().Value {
-		t.Errorf("Expected equal values! Value %d from Go list not equal to value %d from persistent list.",
-			list1.Back().Value, goList.Back().Value)
-	}
-	if goList.Front().Value != list1.Front().Value {
-		t.Errorf("Expected equal values! Value %d from Go list not equal to value %d from persistent list.",
-			list1.Front().Value, goList.Front().Value)
-	}
-	if goList.Back().Prev().Value != list1.Back().Prev().Value {
-		t.Errorf("Expected equal values! Value %d from Go list not equal to value %d from persistent list.",
-			list1.Back().Prev().Value, goList.Back().Prev().Value)
-	}
-	if goList.Front().Next().Value != list1.Front().Next().Value {
-		t.Errorf("Expected equal values! Value %d from Go list not equal to value %d from persistent list.",
-			list1.Front().Next().Value, goList.Front().Next().Value)
-	}
+	compareLists(listFromPersistentList, expectedGoList, t)
 }
 
 func TestDoubleLinkedList_Get(t *testing.T) {
@@ -271,5 +304,24 @@ func TestDoubleLinkedList_Get(t *testing.T) {
 	val, err = list.Get(2, 3)
 	if !errors.Is(err, ErrListIndexOutOfRange) {
 		t.Error("Expected ErrIndexOutOfRange, got nil")
+	}
+}
+
+func compareLists(actualList *golist.List, expectedList *golist.List, t *testing.T) {
+	if actualList.Len() != expectedList.Len() {
+		t.Errorf("Lengths differ: actualList length = %d, expectedList length = %d", actualList.Len(), expectedList.Len())
+		return
+	}
+
+	actualElem := actualList.Front()
+	expectedElem := expectedList.Front()
+
+	for actualElem != nil && expectedElem != nil {
+		if actualElem.Value != expectedElem.Value {
+			t.Errorf("Lists differ at element: actual = %v, expected = %v", actualElem.Value, expectedElem.Value)
+			return
+		}
+		actualElem = actualElem.Next()
+		expectedElem = expectedElem.Next()
 	}
 }
