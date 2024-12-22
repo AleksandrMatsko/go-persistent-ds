@@ -3,11 +3,14 @@ package main
 import (
 	"container/list"
 	"errors"
+
 	"go-persistent-ds/internal"
 )
 
-var ErrVersionNotFound = errors.New("version not found")
-var ErrListIndexOutOfRange = errors.New("index out of range")
+var (
+	ErrVersionNotFound     = errors.New("version not found")
+	ErrListIndexOutOfRange = errors.New("index out of range")
+)
 
 // DoubleLinkedList is a persistent implementation of double linked list.
 // While working with list you can add to the start and to the end, access elements by index and modify.
@@ -215,7 +218,7 @@ func (l *DoubleLinkedList[T]) ToGoList(version uint64) (*list.List, error) {
 		return nil, err
 	}
 
-	var newList = list.New()
+	newList := list.New()
 	for i := 0; i < info.listSize; i++ {
 		val, _ := l.Get(version, i)
 		newList.PushBack(val)
