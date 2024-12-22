@@ -1,10 +1,10 @@
-package main
+package go_persistent_ds
 
 import (
 	"slices"
 	"testing"
 
-	"go-persistent-ds/internal"
+	"github.com/AleksandrMatsko/go-persistent-ds/internal"
 )
 
 func getBranchedSlice(t *testing.T) *Slice[string] {
@@ -571,5 +571,60 @@ func TestSlice_Range(t *testing.T) {
 		size, err = s.Len(9)
 		errIsNil(t, err)
 		isTrue(t, size == 3)
+	})
+}
+
+func TestSliceWithAnyTypes(t *testing.T) {
+	t.Run("Append and Get values ok", func(t *testing.T) {
+		t.Parallel()
+
+		s, v := NewSliceWithAnyValues()
+		versionShouldBe(t, v, 0)
+
+		v, err := s.Append(0, "a")
+		errIsNil(t, err)
+		versionShouldBe(t, v, 1)
+
+		v, err = s.Append(1, 1)
+		errIsNil(t, err)
+		versionShouldBe(t, v, 2)
+
+		v, err = s.Append(2, map[string]string{})
+		errIsNil(t, err)
+		versionShouldBe(t, v, 3)
+
+		v, err = s.Append(3, []uint64{})
+		errIsNil(t, err)
+		versionShouldBe(t, v, 4)
+
+		val, err := s.Get(4, 0)
+		errIsNil(t, err)
+		isTrue(t, val == "a")
+
+		val, err = s.Get(4, 1)
+		errIsNil(t, err)
+		isTrue(t, val == 1)
+
+		val, err = s.Get(4, 2)
+		errIsNil(t, err)
+		isTrue(t, func() bool {
+			castedVal, ok := val.(map[string]string)
+			if !ok {
+				return false
+			}
+
+			return len(castedVal) == 0
+		}())
+
+		val, err = s.Get(4, 3)
+		errIsNil(t, err)
+		isTrue(t, func() bool {
+			castedVal, ok := val.([]uint64)
+			if !ok {
+				return false
+			}
+
+			return len(castedVal) == 0
+		}())
 	})
 }

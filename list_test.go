@@ -1,4 +1,4 @@
-package main
+package go_persistent_ds
 
 import (
 	golist "container/list"
@@ -426,4 +426,59 @@ func compareLists(actualList *golist.List, expectedList *golist.List, t *testing
 		actualElem = actualElem.Next()
 		expectedElem = expectedElem.Next()
 	}
+}
+
+func TestNewDoubleLinkedListWithAnyValues(t *testing.T) {
+	t.Run("Push and Get values ok", func(t *testing.T) {
+		t.Parallel()
+
+		l, v := NewDoubleLinkedListWithAnyValues()
+		versionShouldBe(t, v, 0)
+
+		v, err := l.PushBack(0, "a")
+		errIsNil(t, err)
+		versionShouldBe(t, v, 1)
+
+		v, err = l.PushBack(1, 1)
+		errIsNil(t, err)
+		versionShouldBe(t, v, 2)
+
+		v, err = l.PushBack(2, map[string]string{})
+		errIsNil(t, err)
+		versionShouldBe(t, v, 3)
+
+		v, err = l.PushBack(3, []uint64{})
+		errIsNil(t, err)
+		versionShouldBe(t, v, 4)
+
+		val, err := l.Get(4, 0)
+		errIsNil(t, err)
+		isTrue(t, val == "a")
+
+		val, err = l.Get(4, 1)
+		errIsNil(t, err)
+		isTrue(t, val == 1)
+
+		val, err = l.Get(4, 2)
+		errIsNil(t, err)
+		isTrue(t, func() bool {
+			castedVal, ok := val.(map[string]string)
+			if !ok {
+				return false
+			}
+
+			return len(castedVal) == 0
+		}())
+
+		val, err = l.Get(4, 3)
+		errIsNil(t, err)
+		isTrue(t, func() bool {
+			castedVal, ok := val.([]uint64)
+			if !ok {
+				return false
+			}
+
+			return len(castedVal) == 0
+		}())
+	})
 }

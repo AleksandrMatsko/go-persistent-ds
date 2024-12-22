@@ -1,9 +1,9 @@
-package main
+package go_persistent_ds
 
 import (
 	"errors"
 
-	"go-persistent-ds/internal"
+	"github.com/AleksandrMatsko/go-persistent-ds/internal"
 )
 
 var (
@@ -60,6 +60,11 @@ func NewSliceWithCapacity[TVal any](capacity int) (*Slice[TVal], uint64) {
 	}
 
 	return s, 0
+}
+
+// NewSliceWithAnyValues creates a Slice, that can store values of any type.
+func NewSliceWithAnyValues() (*Slice[any], uint64) {
+	return NewSliceWithCapacity[any](0)
 }
 
 // Set value for given index and version in Slice.

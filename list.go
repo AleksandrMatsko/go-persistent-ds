@@ -1,21 +1,21 @@
-package main
+package go_persistent_ds
 
 import (
 	"container/list"
 	"errors"
 
-	"go-persistent-ds/internal"
+	"github.com/AleksandrMatsko/go-persistent-ds/internal"
 )
 
-var (
-	ErrVersionNotFound     = errors.New("version not found")
-	ErrListIndexOutOfRange = errors.New("index out of range")
-)
+var ErrListIndexOutOfRange = errors.New("index out of range")
 
 // DoubleLinkedList is a persistent implementation of double linked list.
 // While working with list you can add to the start and to the end, access elements by index and modify.
 // Each change of the list creates new version. Versions can be retrieved by their number.
 // Also, there is an opportunity to convert this list into Go list using ToGoList.
+//
+// DoubleLinkedList can perform total of 2^65-1 modifications, and will panic on attempt to modify it for 2^65 time.
+// If you need to continue editing DoubleLinkedList, the good idea is to use ToGoList method to dump list for special version.
 //
 // Note that DoubleLinkedList implementation is not thread safe.
 type DoubleLinkedList[T any] struct {
@@ -59,6 +59,11 @@ func NewDoubleLinkedList[T any]() (*DoubleLinkedList[T], uint64) {
 		panic(err)
 	}
 	return newList, 0
+}
+
+// NewDoubleLinkedListWithAnyValues creates DoubleLinkedList that can store values of any type.
+func NewDoubleLinkedListWithAnyValues() (*DoubleLinkedList[any], uint64) {
+	return NewDoubleLinkedList[any]()
 }
 
 // PushFront adds new element to the head of the DoubleLinkedList. Returns list's new version.
