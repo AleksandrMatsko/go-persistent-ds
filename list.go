@@ -1,10 +1,10 @@
-package main
+package go_persistent_ds
 
 import (
 	"container/list"
 	"errors"
 
-	"go-persistent-ds/internal"
+	"github.com/AleksandrMatsko/go-persistent-ds/internal"
 )
 
 var ErrListIndexOutOfRange = errors.New("index out of range")

@@ -1,9 +1,9 @@
-package main
+package go_persistent_ds
 
 import (
 	"errors"
 
-	"go-persistent-ds/internal"
+	"github.com/AleksandrMatsko/go-persistent-ds/internal"
 )
 
 var (

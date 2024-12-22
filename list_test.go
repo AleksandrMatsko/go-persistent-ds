@@ -1,4 +1,4 @@
-package main
+package go_persistent_ds
 
 import (
 	golist "container/list"

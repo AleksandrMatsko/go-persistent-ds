@@ -1,10 +1,10 @@
-package main
+package go_persistent_ds
 
 import (
 	"slices"
 	"testing"
 
-	"go-persistent-ds/internal"
+	"github.com/AleksandrMatsko/go-persistent-ds/internal"
 )
 
 func getBranchedSlice(t *testing.T) *Slice[string] {
