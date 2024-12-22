@@ -7,7 +7,7 @@ import (
 )
 
 func TestDoubleLinkedList_PushFront(t *testing.T) {
-	list := NewDoubleLinkedList[int]()
+	list, _ := NewDoubleLinkedList[int]()
 	_, err := list.PushFront(0, 12)
 	errIsNil(t, err)
 
@@ -45,7 +45,7 @@ func TestDoubleLinkedList_PushFront(t *testing.T) {
 }
 
 func TestDoubleLinkedList_PushBack(t *testing.T) {
-	list := NewDoubleLinkedList[int]()
+	list, _ := NewDoubleLinkedList[int]()
 	_, err := list.PushBack(0, 12)
 	errIsNil(t, err)
 
@@ -83,7 +83,7 @@ func TestDoubleLinkedList_PushBack(t *testing.T) {
 }
 
 func TestDoubleLinkedList_MixedPush(t *testing.T) {
-	list := NewDoubleLinkedList[int]()
+	list, _ := NewDoubleLinkedList[int]()
 	_, err := list.PushBack(0, 12)
 	errIsNil(t, err)
 	_, err = list.PushFront(1, 9)
@@ -110,7 +110,7 @@ func TestDoubleLinkedList_MixedPush(t *testing.T) {
 }
 
 func TestDoubleLinkedList_ManyPushesInOneVersion(t *testing.T) {
-	list := NewDoubleLinkedList[string]()
+	list, _ := NewDoubleLinkedList[string]()
 	_, err := list.PushBack(0, "anna")
 	errIsNil(t, err)
 	_, err = list.PushBack(1, "oleg")
@@ -121,21 +121,24 @@ func TestDoubleLinkedList_ManyPushesInOneVersion(t *testing.T) {
 	errIsNil(t, err)
 
 	val, err := list.Get(2, 1)
+	errIsNil(t, err)
 	if val != "oleg" {
 		t.Error("Expected oleg in version 2 at position 1, got ", val)
 	}
 	val, err = list.Get(3, 1)
+	errIsNil(t, err)
 	if val != "natalia" {
 		t.Error("Expected natalia in version 3 at position 1, got ", val)
 	}
 	val, err = list.Get(4, 1)
+	errIsNil(t, err)
 	if val != "alexander" {
 		t.Error("Expected alexander in version 3 at position 1, got ", val)
 	}
 }
 
 func TestDoubleLinkedList_BranchingCase(t *testing.T) {
-	list := NewDoubleLinkedList[string]()
+	list, _ := NewDoubleLinkedList[string]()
 	_, err := list.PushBack(0, "anna")
 	errIsNil(t, err)
 	_, err = list.PushBack(1, "oleg")
@@ -162,7 +165,7 @@ func TestDoubleLinkedList_BranchingCase(t *testing.T) {
 }
 
 func TestDoubleLinkedList_Len(t *testing.T) {
-	list := NewDoubleLinkedList[int]()
+	list, _ := NewDoubleLinkedList[int]()
 	_, err := list.PushBack(0, 12)
 	errIsNil(t, err)
 
@@ -189,7 +192,7 @@ func TestDoubleLinkedList_Len(t *testing.T) {
 }
 
 func TestDoubleLinkedList_Update(t *testing.T) {
-	list := NewDoubleLinkedList[int]()
+	list, _ := NewDoubleLinkedList[int]()
 	_, err := list.PushBack(0, 12)
 	errIsNil(t, err)
 
@@ -209,8 +212,45 @@ func TestDoubleLinkedList_Update(t *testing.T) {
 	}
 }
 
+func TestDoubleLinkedList_BranchedUpdate(t *testing.T) {
+	list, _ := NewDoubleLinkedList[string]()
+	_, err := list.PushBack(0, "anna")
+	errIsNil(t, err)
+	_, err = list.PushBack(1, "oleg")
+	errIsNil(t, err)
+	_, err = list.PushBack(2, "natalia")
+	errIsNil(t, err)
+	checkVersion, err := list.PushBack(3, "alexander")
+	errIsNil(t, err)
+	version, err := list.PushFront(2, "ilya")
+	errIsNil(t, err)
+	updVersion, err := list.PushBack(version, "filip")
+	errIsNil(t, err)
+	updVersion, err = list.Update(updVersion, 0, "ilya2")
+	errIsNil(t, err)
+
+	actualList1, err := list.ToGoList(updVersion)
+	errIsNil(t, err)
+	actualList2, err := list.ToGoList(checkVersion)
+	errIsNil(t, err)
+
+	expectedList1 := golist.New()
+	expectedList1.PushBack("anna")
+	expectedList1.PushBack("oleg")
+	expectedList1.PushFront("ilya2")
+	expectedList1.PushBack("filip")
+	compareLists(actualList1, expectedList1, t)
+
+	expectedList2 := golist.New()
+	expectedList2.PushBack("anna")
+	expectedList2.PushBack("oleg")
+	expectedList2.PushBack("natalia")
+	expectedList2.PushBack("alexander")
+	compareLists(actualList2, expectedList2, t)
+}
+
 func TestDoubleLinkedList_Remove(t *testing.T) {
-	list := NewDoubleLinkedList[int]()
+	list, _ := NewDoubleLinkedList[int]()
 	_, err := list.PushBack(0, 12)
 	errIsNil(t, err)
 
@@ -250,8 +290,39 @@ func TestDoubleLinkedList_Remove(t *testing.T) {
 	}
 }
 
+func TestDoubleLinkedList_BranchedRemove(t *testing.T) {
+	list, _ := NewDoubleLinkedList[string]()
+	_, err := list.PushBack(0, "anna")
+	errIsNil(t, err)
+	_, err = list.PushBack(1, "oleg")
+	errIsNil(t, err)
+	_, err = list.PushBack(2, "vsevolod")
+	errIsNil(t, err)
+	branchVersion, err := list.PushBack(1, "natalia")
+	errIsNil(t, err)
+	branchVersion, err = list.PushBack(branchVersion, "alexander")
+	errIsNil(t, err)
+
+	removeVersion, err := list.Remove(branchVersion, 1)
+	errIsNil(t, err)
+	prevLen, err := list.Len(branchVersion)
+	errIsNil(t, err)
+	actualLen, err := list.Len(removeVersion)
+	errIsNil(t, err)
+
+	if prevLen == actualLen {
+		t.Error("Expected different list sizes!")
+	}
+	if prevLen != 3 {
+		t.Error("Expected before remove list length of 3, got ", prevLen)
+	}
+	if actualLen != 2 {
+		t.Error("Expected after remove list length of 2, got ", actualLen)
+	}
+}
+
 func TestDoubleLinkedList_ToGoList(t *testing.T) {
-	list := NewDoubleLinkedList[int]()
+	list, _ := NewDoubleLinkedList[int]()
 	_, err := list.PushBack(0, 12)
 	errIsNil(t, err)
 
@@ -277,7 +348,7 @@ func TestDoubleLinkedList_ToGoList(t *testing.T) {
 }
 
 func TestDoubleLinkedList_Get(t *testing.T) {
-	list := NewDoubleLinkedList[int]()
+	list, _ := NewDoubleLinkedList[int]()
 	_, err := list.PushBack(0, 12)
 	errIsNil(t, err)
 
@@ -301,9 +372,40 @@ func TestDoubleLinkedList_Get(t *testing.T) {
 		t.Error("Expected value of 69, got ", val)
 	}
 
-	val, err = list.Get(2, 3)
+	_, err = list.Get(2, 3)
+	if err == nil {
+		t.Error("Expected error, got nil")
+	}
 	if !errors.Is(err, ErrListIndexOutOfRange) {
 		t.Error("Expected ErrIndexOutOfRange, got nil")
+	}
+}
+
+func TestDoubleLinkedList_BranchedGet(t *testing.T) {
+	list, _ := NewDoubleLinkedList[string]()
+	_, err := list.PushBack(0, "anna")
+	errIsNil(t, err)
+	_, err = list.PushBack(1, "oleg")
+	errIsNil(t, err)
+	_, err = list.PushBack(2, "natalia")
+	errIsNil(t, err)
+	branch1Version, err := list.PushBack(3, "alexander")
+	errIsNil(t, err)
+	version, err := list.PushFront(2, "ilya")
+	errIsNil(t, err)
+	branch2Version, err := list.PushBack(version, "filip")
+	errIsNil(t, err)
+
+	val, err := list.Get(branch1Version, 0)
+	errIsNil(t, err)
+	if val != "anna" {
+		t.Error("Expected value of anna, got ", val)
+	}
+
+	val, err = list.Get(branch2Version, 0)
+	errIsNil(t, err)
+	if val != "ilya" {
+		t.Error("Expected value of ilya, got ", val)
 	}
 }
 

@@ -35,7 +35,7 @@ type infoNode struct {
 }
 
 // NewDoubleLinkedList creates new empty DoubleLinkedList.
-func NewDoubleLinkedList[T any]() *DoubleLinkedList[T] {
+func NewDoubleLinkedList[T any]() (*DoubleLinkedList[T], uint64) {
 	newList := &DoubleLinkedList[T]{
 		versionTree: internal.NewVersionTree[listInfo](),
 		storage:     make([]*internal.FatNode, 0),
@@ -53,9 +53,9 @@ func NewDoubleLinkedList[T any]() *DoubleLinkedList[T] {
 		tail: infoNode,
 	})
 	if err != nil {
-		return nil
+		panic(err)
 	}
-	return newList
+	return newList, 0
 }
 
 // PushFront adds new element to the head of the DoubleLinkedList. Returns list's new version.
@@ -76,7 +76,7 @@ func (l *DoubleLinkedList[T]) PushBack(version uint64, value T) (uint64, error) 
 
 // Update updates element of specified DoubleLinkedList version by index. Returns list's new version.
 //
-// Complexity: O(n * log(m)), where n - DoubleLinkedList size and m - is number of changes in FatNode
+// Complexity: O(n * log(m)), where n - DoubleLinkedList size and m - is number of changes in FatNode.
 func (l *DoubleLinkedList[T]) Update(version uint64, index int, value T) (uint64, error) {
 	info, err := l.versionTree.GetVersionInfo(version)
 	if err != nil {
@@ -130,7 +130,7 @@ func (l *DoubleLinkedList[T]) Len(version uint64) (int, error) {
 // Remove removes element from specified version of DoubleLinkedList by index and returns new list's version.
 // By removal, we mean delete of connection between specified element and his "neighbours".
 //
-// Complexity: O(n * log(m)), where n - DoubleLinkedList size and m - is number of changes in FatNode
+// Complexity: O(n * log(m)), where n - DoubleLinkedList size and m - is number of changes in FatNode.
 func (l *DoubleLinkedList[T]) Remove(version uint64, index int) (uint64, error) {
 	info, err := l.versionTree.GetVersionInfo(version)
 	if err != nil {
@@ -181,7 +181,7 @@ func (l *DoubleLinkedList[T]) Remove(version uint64, index int) (uint64, error) 
 
 // Get retrieves value from the specified DoubleLinkedList version by index.
 //
-// Complexity: O(n * log(m)), where n - DoubleLinkedList size and m - is number of changes in FatNode
+// Complexity: O(n * log(m)), where n - DoubleLinkedList size and m - is number of changes in FatNode.
 func (l *DoubleLinkedList[T]) Get(version uint64, index int) (T, error) {
 	info, err := l.versionTree.GetVersionInfo(version)
 	if err != nil {
