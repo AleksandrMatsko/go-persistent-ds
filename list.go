@@ -17,6 +17,9 @@ var (
 // Each change of the list creates new version. Versions can be retrieved by their number.
 // Also, there is an opportunity to convert this list into Go list using ToGoList.
 //
+// DoubleLinkedList can perform total of 2^65-1 modifications, and will panic on attempt to modify it for 2^65 time.
+// If you need to continue editing DoubleLinkedList, the good idea is to use ToGoList method to dump list for special version.
+//
 // Note that DoubleLinkedList implementation is not thread safe.
 type DoubleLinkedList[T any] struct {
 	versionTree *internal.VersionTree[listInfo]
@@ -59,6 +62,11 @@ func NewDoubleLinkedList[T any]() (*DoubleLinkedList[T], uint64) {
 		panic(err)
 	}
 	return newList, 0
+}
+
+// NewDoubleLinkedListWithAnyValues creates DoubleLinkedList that can store values of any type.
+func NewDoubleLinkedListWithAnyValues() (*DoubleLinkedList[any], uint64) {
+	return NewDoubleLinkedList[any]()
 }
 
 // PushFront adds new element to the head of the DoubleLinkedList. Returns list's new version.

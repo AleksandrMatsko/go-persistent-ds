@@ -575,7 +575,7 @@ func TestSlice_Range(t *testing.T) {
 }
 
 func TestSliceWithAnyTypes(t *testing.T) {
-	t.Run("Set and Get values ok", func(t *testing.T) {
+	t.Run("Append and Get values ok", func(t *testing.T) {
 		t.Parallel()
 
 		s, v := NewSliceWithAnyValues()
